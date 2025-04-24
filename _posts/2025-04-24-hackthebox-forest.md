@@ -132,7 +132,7 @@ Since we have an anonymous bind, we can enumerate the LDAP service using `ldapse
 Searching for Users with `ldapsearch` 
 
 ```shell
-ldapsearch -LLL -H ldap://FOREST.htb.local -D "" -b "DC=htb,DC=local"
+ldapsearch -LLL -H ldap://FOREST.htb.local -D "" -b "DC=htb,DC=local" "(objectClass=person)" sAMAccountName dn
 ```
 
 it didn't give us every special user because we are not querying for "Service Accounts", From the Service Accounts we get another user, `svc-alfresco`
