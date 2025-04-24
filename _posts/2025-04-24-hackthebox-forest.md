@@ -10,6 +10,18 @@ image:
 The Forest box was compromised by first identifying it as a Domain Controller via Nmap and confirming LDAP anonymous bind. LDAP enumeration revealed a service account, svc-alfresco, which had Kerberos pre-authentication disabled, making it vulnerable to AS-REP Roasting. The hash was retrieved using GetNPUsers.py, cracked to reveal the password \<redacted\> and authenticated access was gained. Using this account, BloodHound revealed it had GenericAll rights on a group with DCSync privileges. By adding svc-alfresco to this group and enabling DCSync with bloodyAD, the Administrator NTLM hash was dumped using secretsdump.py, granting full domain admin access.
 
 ## Nmap Scan
+
+We start our enumeration of the given IP Address by running an `nmap` scan
+- nmap scan
+
+```shell
+nmap -sVC -Pn -oN nmap -vv 10.10.10.161
+```
+> Command breakdown:
+- `nmap` : This command is used to run the nmap tool.
+- `-sVC` : This flag is the combination of the `-sV` and `-sV` flags, which specifies that we want to run a service version scan and a script scan, respectively.
+{: .prompt-info}
+
 ### Relevant Ports
 ```
 53/tcp    open  domain       syn-ack Simple DNS Plus 
