@@ -399,7 +399,7 @@ htb.local\Administrator:des-cbc-md5:c1e049c71f57343b
 - `-just-dc-user Administrator` : This flag specifies that we want to dump the NTDS.DIT secrets only for the user Administrator.
 {: .prompt-info}
 
-With the `Administrator`'s NTLM hash, we can now authenticate to the SMB share using the `evil-winrm` command and we now have a full Domain Admin access to the machine.
+With the `Administrator`'s NTLM hash, we can now authenticate to the WinRM service using the `evil-winrm` command and we now have a full Domain Admin access to the machine.
 
 ```powershell
 
