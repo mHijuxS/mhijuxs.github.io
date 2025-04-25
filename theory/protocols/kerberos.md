@@ -2,6 +2,7 @@
 title: Kerberos Protocol
 layout: page
 media_subpath: /theory/protocols/assets/kerberos/
+toc: true
 ---
 
 ## Kerberos Protocol Overview
