@@ -7,5 +7,5 @@ permalink: /theory/
 
 ## Protocols
 
-- [Kerberos](/theory/protocols/kerberos/)
+- [Kerberos](/theory/protocols/kerberos)
 
