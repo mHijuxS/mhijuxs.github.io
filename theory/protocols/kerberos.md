@@ -29,21 +29,21 @@ Kerberos uses tickets to authenticate users and services. A ticket is a time-lim
 The Kerberos authentication process involves several steps:
 
 1. **Client Authentication Request**: The client sends a request to the KDC's Authentication Service (AS) for a Ticket Granting Ticket (TGT). This request includes the client's principal name and a timestamp. 
-- Principal requests a TGT from the KDC, by sending a request to the AS (AS-REQ).
-- The AS verifies the credentials, looks up the password hash in the KDB, and decrypts the timestamp using the password hash.
-- If the timestamp is unique, the AS authenticates the principal
-- The principal then receives an Authentication Server Reply (AS-REP) containing the TGT and a session key.
+  - Principal requests a TGT from the KDC, by sending a request to the AS (AS-REQ).
+  - The AS verifies the credentials, looks up the password hash in the KDB, and decrypts the timestamp using the password hash.
+  - If the timestamp is unique, the AS authenticates the principal
+  - The principal then receives an Authentication Server Reply (AS-REP) containing the TGT and a session key.
 2. **Granting Permission:** With the TGT, the client can request access to specific services from the Ticket Granting Service (TGS). The TGT is encrypted with the KDC's secret key, ensuring its integrity and confidentiality.
-- The client sends a request to the TGS (TGS-REQ) along with the TGT, name of the resource and an authenticator (a timestamp encrypted with the session key)
-- After receiving the request, the TGS on the KDC checks if the resource exists in the Realm, decrypts the TGT and extracts the session keys. 
-- If is all valid, the TGS generates a service ticket (TGS-REP) for the requested resource, which includes the name of the service for the service that has been granted, a new session key to be used between the Principal and the Service and is encrypted with the resource's secret key, and the Service Ticket (ST).
+  - The client sends a request to the TGS (TGS-REQ) along with the TGT, name of the resource and an authenticator (a timestamp encrypted with the session key)
+  - After receiving the request, the TGS on the KDC checks if the resource exists in the Realm, decrypts the TGT and extracts the session keys. 
+  - If is all valid, the TGS generates a service ticket (TGS-REP) for the requested resource, which includes the name of the service for the service that has been granted, a new session key to be used between the Principal and the Service and is encrypted with the resource's secret key, and the Service Ticket (ST).
 3. **Service Access**: The client sends the service ticket to the requested service along with an authenticator (a timestamp encrypted with the session key). The service decrypts the ticket using its secret key and verifies the client's identity.
-- The client sends the service ticket to the requested service (AP-REQ) along with an authenticator (username and timestamp encrypted with the session key).
-- The service decrypts the ticket using its secret key and verifies the client's identity.
-- The service checks if the AP-REQ username matches the username in the service ticket and if the timestamp is valid.
-- Then the service checks the privileges of the user and grants access to the requested resource.
-- The service sends a response (AP-REP) back to the client, confirming the successful authentication and access to the resource.
-- The client and service can now communicate securely using the session key established during the authentication process.
+  - The client sends the service ticket to the requested service (AP-REQ) along with an authenticator (username and timestamp encrypted with the session key).
+  - The service decrypts the ticket using its secret key and verifies the client's identity.
+  - The service checks if the AP-REQ username matches the username in the service ticket and if the timestamp is valid.
+  - Then the service checks the privileges of the user and grants access to the requested resource.
+  - The service sends a response (AP-REP) back to the client, confirming the successful authentication and access to the resource.
+  - The client and service can now communicate securely using the session key established during the authentication process.
 
 ## Kerberos Protocol Attacks
 
@@ -60,7 +60,7 @@ The AS-REP roast attack is a method used to extract the password hash of a user 
 
 **Enumeration From Linux:**
 
-To enumerate users with pre-authentication disabled, you can use the `GetUserSPNs` command from the Impacket library. This command will query the KDC for all users in the domain and check if they have pre-authentication disabled.
+To enumerate users with pre-authentication disabled, you can use the `GetNPUsers.py` command from the Impacket library. This command will query the KDC for all users in the domain and check if they have pre-authentication disabled.
 
 ```
 GetNPUsers.py DOMAIN/ 
@@ -109,8 +109,8 @@ Rubeus.exe asreproast
 
 ## 📚 References
 
-- https://learn.microsoft.com/en-us/windows-server/security/kerberos/
-- https://www.optiv.com/insights/source-zero/blog/kerberos-domains-achilles-heel
-- https://www.picussecurity.com/resource/blog/as-rep-roasting-attack-explained-mitre-attack-t1558.004
-- https://www.hackthebox.com/blog/what-is-kerberos-authentication
-- https://book.hacktricks.wiki/en/windows-hardening/active-directory-methodology/asreproast.html
+- [Microsoft](https://learn.microsoft.com/en-us/windows-server/security/kerberos/)
+- [Optiv](https://www.optiv.com/insights/source-zero/blog/kerberos-domains-achilles-heel)
+- [Picussecurity](https://www.picussecurity.com/resource/blog/as-rep-roasting-attack-explained-mitre-attack-t1558.004)
+- [HackTheBox](https://www.hackthebox.com/blog/what-is-kerberos-authentication)
+- [HackTricks](https://book.hacktricks.wiki/en/windows-hardening/active-directory-methodology/asreproast.html)
