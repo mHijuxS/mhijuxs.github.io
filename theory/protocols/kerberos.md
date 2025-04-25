@@ -1,6 +1,7 @@
 ---
 title: Kerberos Protocol
-layout: page
+layout: post
+date: 2025-04-25
 media_subpath: /theory/protocols/assets/kerberos/
 ---
 
