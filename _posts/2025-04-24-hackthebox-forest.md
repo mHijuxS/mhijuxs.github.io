@@ -7,7 +7,7 @@ image:
   path: 'https://labs.hackthebox.com/storage/avatars/7dedecb452597150647e73c2dd6c24c7.png'
 ---
 
-The Forest box was compromised by first identifying it as a Domain Controller via Nmap and confirming LDAP anonymous bind. LDAP enumeration revealed a service account, svc-alfresco, which had Kerberos pre-authentication disabled, making it vulnerable to AS-REP Roasting. The hash was retrieved using GetNPUsers.py, cracked to reveal the password \<redacted\> and authenticated access was gained. Using this account, BloodHound revealed it had GenericAll rights on a group with DCSync privileges. By adding svc-alfresco to this group and enabling DCSync with bloodyAD, the Administrator NTLM hash was dumped using secretsdump.py, granting full domain admin access.
+The Forest box was compromised by first identifying it as a Domain Controller via Nmap and confirming LDAP anonymous bind. LDAP enumeration revealed a service account, svc-alfresco, which had Kerberos pre-authentication disabled, making it vulnerable to [AS-REP Roasting](/theory/protocols/kerberos/#as-rep-roast-attack). The hash was retrieved using `GetNPUsers.py`, cracked to reveal the password \<redacted\> and authenticated access was gained. Using this account, BloodHound revealed it had GenericAll rights on a group with DCSync privileges. By adding svc-alfresco to this group and enabling DCSync with bloodyAD, the Administrator NTLM hash was dumped using secretsdump.py, granting full domain admin access.
 
 ## Nmap Scan
 
@@ -35,7 +35,7 @@ nmap -sVC -Pn -oN nmap -vv 10.10.10.161
 636/tcp   open  tcpwrapped   syn-ack -> Domain Controller indicattor
 3268/tcp  open  ldap         syn-ack Microsoft Windows Active Directory LDAP (Domain: htb.local, Site: Default-First-Site-Name)
 3269/tcp  open  tcpwrapped   syn-ack
-WinRM -> 5985/tcp  open  http         syn-ack Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+5985/tcp  open  http         syn-ack Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
 ```
 
 > Ports for services such as LDAP, DNS and Kerberos are big indicators that the target is likely a Windows Domain Controller. 
