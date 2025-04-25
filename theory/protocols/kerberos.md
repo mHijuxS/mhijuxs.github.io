@@ -4,7 +4,7 @@ layout: default
 media_subpath: /theory/protocols/assets/kerberos/
 ---
 
-# Kerberos Protocol Overview
+## Kerberos Protocol Overview
 
 Kerberos is a network authentication protocol designed to provide secure authentication for users and services in a distributed computing environment. It uses symmetric key cryptography and a trusted third party (the Key Distribution Center, or KDC) to facilitate secure communication between clients and servers.
 
@@ -86,8 +86,6 @@ Get-DomainUser -PreauthNotRequired -verbose #List vuln users using PowerView
 
 #### Attack
 
-##### From Linux
-
 We can add the flag `-request` to the `GetNPUsers.py` command to request the TGT for the user with pre-authentication disabled. This will return the encrypted TGT and the session key.
 
 ```bash
@@ -100,7 +98,6 @@ If you have a list of possible users, while enumerating with Kerbrute, it will a
 kerbrute  -d DOMAIN --dc DC userenum USERLIST
 ```
 
-##### From Windows
 
 We can use the `Rubeus` tool to request the TGT for the user with pre-authentication disabled. This will return the encrypted TGT and the session key.
 
