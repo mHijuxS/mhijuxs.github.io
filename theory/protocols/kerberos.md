@@ -58,17 +58,15 @@ The AS-REP roast attack is a method used to extract the password hash of a user 
 - The attacker must be able to capture the AS-REP response from the KDC.
 - **🚨 The target account must have pre-authentication disabled.**
 
-#### Enumeration
-
-##### From Linux
+#### Enumeration From Linux
 
 To enumerate users with pre-authentication disabled, you can use the `GetUserSPNs` command from the Impacket library. This command will query the KDC for all users in the domain and check if they have pre-authentication disabled.
 
 ```bash
-GetNPUsers.py <DOMAIN>/ 
+GetNPUsers.py DOMAIN/ 
 ```
 
-##### From Windows
+#### Enumeration From Windows
 
 To enumerate users with pre-authentication disabled, you can use:
 
@@ -93,13 +91,13 @@ Get-DomainUser -PreauthNotRequired -verbose #List vuln users using PowerView
 We can add the flag `-request` to the `GetNPUsers.py` command to request the TGT for the user with pre-authentication disabled. This will return the encrypted TGT and the session key.
 
 ```bash
-GetNPUsers.py <DOMAIN>/ -request
+GetNPUsers.py DOMAIN/ -request
 ```
 
 If you have a list of possible users, while enumerating with Kerbrute, it will automatically request the TGT for each user with pre-authentication disabled.
 
 ```bash
-kerbrute  -d <DOMAIN> --dc <DC> userenum <USERLIST>
+kerbrute  -d DOMAIN --dc DC userenum USERLIST
 ```
 
 ##### From Windows
@@ -109,24 +107,6 @@ We can use the `Rubeus` tool to request the TGT for the user with pre-authentica
 ```powershell
 Rubeus.exe asreproast 
 ```
-
-### Kerberoasting
-
-TODO
-
-### Kerberos Delegations
-
-TODO
-
-### Golden Ticket
-
-### Silver Ticket
-
-TODO
-
-### Pass-the-Ticket
-
-TODO
 
 ## 📚 References
 
