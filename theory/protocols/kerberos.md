@@ -16,7 +16,7 @@ There are three main components (Three Cerberus Heads) in the Kerberos protocol:
   - Kerberos Database (KDB): Stores the secret keys for all principals in the realm.
   - Authentication Service (AS): Issues Ticket Granting Tickets (TGTs) to principals.
   - Ticket Granting Service (TGS): This service accepts the TGTs and issues service tickets to clients for accessing specific services.
-- **Resource**: The asset or service that the client wants to access, such as .
+- **Resource**: The asset or service that the client wants to access.
 
 > What is a realm?
 A realm is a logical network or domain that uses Kerberos for authentication. It is typically associated with a specific organization or administrative domain. Each realm has its own KDC, which manages the authentication process for users and services within that realm. Realms can be interconnected, allowing users from one realm to access resources in another realm through trust relationships. On Windows, domains are often used in conjunction with Kerberos to define security boundaries and manage user accounts, permissions, and policies.
