@@ -1,6 +1,6 @@
 ---
 title: Kerberos Protocol
-layout: default
+layout: page
 media_subpath: /theory/protocols/assets/kerberos/
 ---
 
