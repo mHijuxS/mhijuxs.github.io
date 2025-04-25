@@ -82,6 +82,7 @@ Get-DomainUser -PreauthNotRequired -verbose #List vuln users using PowerView
 ```
 
 #### Attack
+
 ##### From Linux
 We can add the flag `-request` to the `GetNPUsers.py` command to request the TGT for the user with pre-authentication disabled. This will return the encrypted TGT and the session key.
 
