@@ -358,7 +358,7 @@ INFO: Compressing output into 20250424032608_bloodhound.zip
 
 We can see some errors of authentication using Kerberos. This is because of the clock skew we saw before. We can ignore this for now, as we are still able to authenticate via NTLM.
 
-After setting up bloodhound-ce, we started enumerate our user
+After setting up bloodhound-ce, we start to enumerate our user permissions
 
 We see we have outbound object control, which is generally a good indicator that we have some sort of control or possibility of lateral movement over the domain.
 
@@ -368,7 +368,7 @@ From the big number of objects that we have some outbound control, we are probab
 
 ![AO](file-20250424042252753.png)
 
-We are members of the Account operators group, which is a default group in Active Directory that has the ability to create, delete, and modify user accounts and groups. This group is typically used for delegating administrative tasks to non-administrative users. We can see that we have the ability to modify the group "EXCHANGE WINDOWS PERMISSIONS" which is a group that has the rights to perform a DCSync attack over the domain.
+We are inherit the rights of the Account operators group, which is a default group in Active Directory that has the ability to create, delete, and modify user accounts and groups. This group is typically used for delegating administrative tasks to non-administrative users. We can see that we have the ability to modify the group "EXCHANGE WINDOWS PERMISSIONS" which is a group that has [WriteDacl](/theory/windows/AD/acl#access-rights-bits) rights over the domain. 
 
 ![GAll](file-20250424042301509.png)
 
@@ -377,12 +377,12 @@ We can follow the path of the GenericAll shown on bloodhound for the group
 ![Path](file-20250424042128421.png)
 
 This path involves the following steps:
-- We have the ability to modify the group "EXCHANGE WINDOWS PERMISSIONS" which is a group that has the rights to perform a DCSync attack over the domain.
-- We can add ourselves to this group. We can then use the `bloodyAD` tool to add ourselves to the group 
-- We then enable DCSync rights for our user.
+- We have the ability to modify the group "EXCHANGE WINDOWS PERMISSIONS" which is a group that has WriteDacl rights over the domain.
+- We can add ourselves to this group, using the `bloodyAD` tool. 
+- We then use the WriteDacl rights that we inherited from the "EXCHANGE WINDOWS PERMISSIONS" group to make ourselves able to DCSync the domain.
 - DCSync the domain
 
-```
+```shell
 bloodyAD --host FOREST.htb.local -u svc-alfresco -p <redacted> add groupMember "EXCHANGE WINDOWS PERMISSIONS" svc-alfresco
 [+] svc-alfresco added to EXCHANGE WINDOWS PERMISSIONS
 
@@ -432,8 +432,8 @@ Mode                LastWriteTime         Length Name
 ### Quick Recap
 - The machine is a Domain Controller, which is indicated by the presence of LDAP, Kerberos and SMB services.
 - The machine has LDAP anonymous bind enabled, which allows us to enumerate users and groups without authentication.
-- The machine has a service account, svc-alfresco, which has Kerberos pre-authentication disabled, making it vulnerable to AS-REP Roasting.
-- The machine has a group, "EXCHANGE WINDOWS PERMISSIONS", which has the rights to perform a DCSync attack over the domain.
+- The machine has a service account, `svc-alfresco`, which has Kerberos pre-authentication disabled, making it vulnerable to AS-REP Roasting.
+- The machine has a group, "EXCHANGE WINDOWS PERMISSIONS", which has the `WriteDacl` rights to perform a DCSync attack over the domain.
 
 ### Lessons Learned / To be reforced
 - Enumerate anonymous bind on LDAP to gather information about the domain
