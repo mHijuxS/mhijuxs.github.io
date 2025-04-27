@@ -1,7 +1,7 @@
 ---
 title: Theory
 icon: fas fa-book  # optional: FontAwesome icon
-order: 6           # controls tab order
+order: 5           # controls tab order
 permalink: /theory/
 ---
 

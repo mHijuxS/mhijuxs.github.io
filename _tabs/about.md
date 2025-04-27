@@ -1,7 +1,7 @@
 ---
 # the default layout is 'page'
 icon: fas fa-info-circle
-order: 4
+order: 6
 ---
 
 Hey there! I'm a graduate in Cartographic Engineering and cybersecurity enthusiast who enjoys solving all sorts of challenges—from CTFs, mathematics, and physics questions to real-world problems. At the moment I'm a holder of the following cybersecurity certificates:
