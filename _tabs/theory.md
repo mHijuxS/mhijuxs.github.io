@@ -9,3 +9,8 @@ permalink: /theory/
 
 - [Kerberos](/theory/protocols/kerberos)
 - [LDAP](/theory/protocols/ldap)
+
+## Windows
+### Active Directory
+- [DCSync](/theory/windows/AD/DCSync)
+- [ACLs](/theory/windows/AD/acl)
