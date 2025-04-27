@@ -8,4 +8,4 @@ permalink: /theory/
 ## Protocols
 
 - [Kerberos](/theory/protocols/kerberos)
-
+- [LDAP](/theory/protocols/ldap)

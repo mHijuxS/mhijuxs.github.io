@@ -19,7 +19,7 @@ nmap -sVC -Pn -oN nmap -vv 10.10.10.161
 ```
 > Command breakdown:
 - `nmap` : This command is used to run the nmap tool.
-- `-sVC` : This flag is the combination of the `-sV` and `-sV` flags, which specifies that we want to run a service version scan and a script scan, respectively.
+- `-sVC` : This flag is the combination of the `-sV` and `-sC` flags, which specifies that we want to run a service version scan and a script scan, respectively.
 {: .prompt-info}
 
 ### Relevant Ports
