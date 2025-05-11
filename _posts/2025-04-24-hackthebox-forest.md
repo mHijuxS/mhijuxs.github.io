@@ -1,7 +1,7 @@
 ---
 title: Forest
 categories: [HackTheBox]
-tags: [windows, ldap, kerberos, smb, nmap, impacket, hashcat, kerbrute, bloodhound, netexec]
+tags: [windows, ldap, kerberos, smb, nmap, impacket, passwordcracking, kerbrute, bloodhound, netexec]
 media_subpath: /images/hackthebox_forest/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/7dedecb452597150647e73c2dd6c24c7.png'

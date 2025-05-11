@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "c36e8820d14df27e",
+        "id": "1352bdc9be7f3750",
         "type": "tabs",
         "children": [
           {
-            "id": "a2f8df88e9c8ddda",
+            "id": "6eb9ab60df1d2e2b",
             "type": "leaf",
             "state": {
               "type": "empty",
@@ -161,20 +161,32 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "a2f8df88e9c8ddda",
+  "active": "6eb9ab60df1d2e2b",
   "lastOpenFiles": [
-    "theory/protocols/kerberos.md",
-    "theory/protocols/assets/kerberos/file-20250424214228502.png",
+    "_posts/2025-05-05-hackthebox-underpass.md",
+    "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507230827047.png",
+    "_posts/2025-05-05-hackthebox-underpass.md~",
+    "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507223822285.png",
+    "_posts/assets/2025-05-05-hackthebox-underpass",
+    "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507220651383.png",
+    "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507220634161.png",
+    "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507220415834.png",
+    "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507220032674.png",
+    "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507220003326.png",
+    "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507215718225.png",
+    "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507215409750.png",
+    "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507214759505.png",
+    "theory/misc/wordpress.md",
+    "_site/theory/misc/assets/wordpress",
+    "_site/theory/misc/assets",
+    "theory/misc/assets/wordpress",
+    "theory/misc/assets",
+    "_posts/2025-05-05-hackthebox-bigbang.md~",
+    "_posts/4913",
+    "_posts/2025-05-05-hackthebox-bigbang.md",
+    "_posts/assets/2025-05-05-hackthebox-bigbang",
+    "_posts/assets",
     "_posts/2025-04-24-hackthebox-forest.md",
-    "theory/protocols/kerberos.md~",
-    "theory/protocols/4913",
-    "_site/theory/protocols/kerberos.html",
-    "_site/theory/protocols/kerberos/index.html",
-    "_site/theory/protocols/kerberos",
-    "_site/theory/protocols/assets/kerberos/file-20250424214228502.png",
-    "_site/theory/protocols/assets/kerberos",
-    "_site/theory/protocols/assets",
-    "theory/protocols/assets/kerberos",
-    "theory/protocols/assets"
+    "theory/protocols/kerberos.md"
   ]
 }
