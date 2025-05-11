@@ -447,7 +447,7 @@ grep: classes.dex: binary file matches
 grep: satellite-app.apk: binary file matches
 ```
 
-[DESC](file-20250504171654939.png)
+![DESC](file-20250504171654939.png)
 
 On the `login` endpoint we can send the `developer` credential to receive an access token
 ```
