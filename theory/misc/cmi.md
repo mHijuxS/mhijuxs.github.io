@@ -33,7 +33,8 @@ Command Injection is a type of attack where an attacker can execute arbitrary co
 | ---------------------- | ----------------------- | ------------------------- | ------------------------------------- |
 | Tab                    | `\t`                    | `%09`                     | Both Linux and Windows accepts tabs to separate commands, useful for bypassing a space blacklist|
 | `IFS`              | `${IFS}`                  |             | IFS is a special variable in Linux (Internal Field Separator) which is normally a space or a tab as the default separator|
-| `Brace Expansion` | `{}` | `` | `{}` is a special character in Linux which is used to group commands together. It can be used to bypass a space blacklist, `{ls,-la}` would result in `ls -la` command|
+| `Brace Expansion` | `{}` | `` | `{}` is a special character in Linux which is used to group commands together. It can be used to bypass a space blacklist, `{ls,-la}` would result in `ls -la` command |
+
 > **Note:** To force a tab character on a shell, we can send `CTRL+v` and then `CTRL+I` (or simply `CTRL-v`+`TAB Key`) to insert a tab character. This is useful when we want to bypass a space blacklist.
 
 ### Bypassing Arithmetic Expansion
