@@ -51,7 +51,7 @@ we can add spaces from within the parentheses to make the shell interpret the co
 #Input: ls -la) ) #
 ```
 
-this will be evaluated as `echo $((ls -la ) ) #))`, which will be interpreted as `echo $((ls -la))` and will show us the output of the command `ls -la`.
+this will be evaluated as `echo $((ls -la ) ) #))`, which will be interpreted as `echo $((ls -la) )` and will show us the output of the command `ls -la`.
 
 
 ### Getting Characters From Environment Variables
