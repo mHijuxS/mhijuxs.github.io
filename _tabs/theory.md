@@ -5,6 +5,16 @@ order: 5           # controls tab order
 permalink: /theory/
 ---
 
+## Misc
+- [Command Injection](/theory/misc/cmi)
+- [Port Forward](/theory/misc/portforward)
+- [SQL Injection](/theory/misc/sql)
+- [PHP](/theory/misc/php)
+- [Wordpress](/theory/misc/wordpress)
+
+## Mobile
+- [Android APK](/theory/mobile/apk)
+
 ## Protocols
 
 - [Kerberos](/theory/protocols/kerberos)
