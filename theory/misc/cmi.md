@@ -77,7 +77,7 @@ ${PATH:0:1}
 ```
 
 ### Bash without letters
-With bash we can use special characters to execute commands without using letters. For example, we can use the following command to execute `ls`:
+With bash we can use special characters to execute commands without using letters. For example, we can use the following command to execute the same as the command `cat`:
 
 ```bash
 "$(<~/*/????.???)"
