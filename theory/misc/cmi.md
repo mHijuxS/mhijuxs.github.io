@@ -25,6 +25,28 @@ Command Injection is a type of attack where an attacker can execute arbitrary co
 | Sub-Shell              | ` `` `                  | `%60%60`                  | Both (Linux-only)                          |
 | Sub-Shell              | `$()`                   | `%24%28%29`               | Both (Linux-only)                          |
 
+A usefull command on Linux to find the interpretation of strokes of command like `CTRL+I` is `showkey -a` which will show us the ASCII code of the stroke. For example, if we want to find the ASCII code of `CTRL+I`, we can use the following command:
+
+```bash
+showkey -a
+
+Press any keys - Ctrl-D will terminate this program
+
+		 9 0011 0x09
+m 	109 0155 0x6d
+H 	72 0110 0x48
+i 	105 0151 0x69
+j 	106 0152 0x6a
+u 	117 0165 0x75
+x 	120 0170 0x78
+S 	83 0123 0x53
+^M 	13 0015 0x0d
+^L 	12 0014 0x0c
+^J 	10 0012 0x0a
+^C 	 3 0003 0x03
+^X 	24 0030 0x18
+^Z 	26 0032 0x1a
+```
 ### Bypassing Blacklists
  
 #### Filtered Spaces
