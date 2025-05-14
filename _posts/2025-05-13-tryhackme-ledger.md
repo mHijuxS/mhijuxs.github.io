@@ -144,7 +144,7 @@ I can request the `AS-REP` for the `DC` by setting the `-request` flag and I can
 
 ![NON](file-20250513205755387.png)
 
-> I could have also enumerated the users with `kerberos pre-authentication` disabled using the `kerbrute` tool, using the `enumuser` command, which retrieves the hash automatically
+> I could have also enumerated the users with `kerberos pre-authentication` disabled using the `kerbrute` tool, using the `userenum` command, which retrieves the hash automatically
 {: .prompt-info}
 
 I couldn't crack any of these hashses using the `rockyou` wordlist.
