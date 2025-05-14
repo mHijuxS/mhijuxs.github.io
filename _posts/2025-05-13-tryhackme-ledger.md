@@ -9,18 +9,20 @@ image:
 
 # Summary
 
-[Ledger](https://tryhackme.com/room/ledger) is a Hard Windows machine that focuses on Active Directory enumeration and exploitation. At first I are presented with lots of possible attack vectors. At first, I enumerated the given host that indicated to us that I Ire dealing with a `Domain controller` because of the `kerberos`, `LDAP`, `DNS` services running. Taking a look at the `LDAP` services, I discovered that it alloId an [anonymous bind](/theory/protocols/ldap/#anonymous-bind) on the server, making it possible to enumerate the domain objects. With it, I found two accounts that had their passwords on the `description` field. Enumerating which groups they are member of, I discoverd the group `CERTIFICATE SERVICE DCOM ACCESS@THM.LOCAL`, showing us that there is possible a `Certificate Service` running on this AD environment, where I could try to look for some [`ADCS`](/theory/windows/AD/adcs) attacks. Using the `certipy` tool I can find a template vulnerable to [`ESC1`](/theory/windows/AD/adcs#esc1), giving us the possibility to craft a `TGT` for the `Administrator` user, and with that, extract its `NTLM` hash, but since this user is member of the `Protected Users` group, I can't directly login using the `NTLM` hash since this group disallows `NTLM` authentication for its members, so I need to authenticate via [`Kerberos`](/theory/protocols/kerberos), and with the `TGT` or the `hash` I can authenticate on the box as `Adminsitrator`.
+[Ledger](https://tryhackme.com/room/ledger) is a Hard Windows machine that focuses on Active Directory enumeration and exploitation. At first we are presented with lots of possible attack vectors. By enumerating the given host, it is indicated to us that we are dealing with a `Domain controller` because of the `kerberos`, `LDAP`, `DNS` services running. Taking a look at the `LDAP` services, I discovered that it allows an [anonymous bind](/theory/protocols/ldap/#anonymous-bind) on the server, making it possible to enumerate the domain objects without credentials. With this, I found two accounts that had their passwords on the `description` field and by enumerating which groups they are members of, I discoverd the presence of the group `CERTIFICATE SERVICE DCOM ACCESS@THM.LOCAL`, showing us that there is possible a `Certificate Service` running on this AD environment, where I could try to look for some [`ADCS`](/theory/windows/AD/adcs) attacks. Using the `certipy` tool, I could find a template vulnerable to [`ESC1`](/theory/windows/AD/adcs#esc1), giving me the possibility to craft a `TGT` for the `Administrator` user, and with that, extract its `NTLM` hash, but since this user is member of the `Protected Users` group, I can't directly login using the `NTLM` hash since this group disallows `NTLM` authentication for its members, so I need to authenticate via [`Kerberos`](/theory/protocols/kerberos), and with the `TGT` or the `hash` I could authenticate on the box as `Administrator`.
 
 ---
 
 
 ## Nmap 
 
-I started of as always with an `nmap` scan to list the services running on the machine
+I started of as always, with an `nmap` scan to list the services running on the machine
 
 ```bash
 sudo nmap -sVC -p- -Pn -oN nmap
 ```
+> For CTFs, the use of `--min-rate 10000` will speed up the time for the scan to finish, but it causes a lot of noise in the environment, so double check the results
+{: .prompt-info}
 
 Which revealed to us the following **relevant** ports
 
