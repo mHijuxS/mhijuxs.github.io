@@ -175,7 +175,7 @@ bloodhound-ce-python -d thm.local -ns 10.10.174.91 -dc labyrinth.thm.local --zip
 
 Enumerating the groups for the users that I have control, I can see that they are member of `CERTIFICATE SERVICE DCOM ACCESS`, which indicates that there is a `Certificate Service` running on the target host
 
-![[file-20250514011356337.png]]
+![NON](file-20250514011356337.png)
 
 ## ADCS
 
