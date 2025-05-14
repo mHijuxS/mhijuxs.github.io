@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "1352bdc9be7f3750",
+        "id": "fbd8f71af5572804",
         "type": "tabs",
         "children": [
           {
-            "id": "6eb9ab60df1d2e2b",
+            "id": "c70e243dc707a3de",
             "type": "leaf",
             "state": {
               "type": "empty",
@@ -161,8 +161,14 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "6eb9ab60df1d2e2b",
+  "active": "c70e243dc707a3de",
   "lastOpenFiles": [
+    "_posts/2025-15-13-tryhackme-ledger.md",
+    "_posts/assets/2025-15-13-tryhackme-ledger/file-20250514012935730.png",
+    "_posts/assets/2025-15-13-tryhackme-ledger/file-20250514012655844.png",
+    "_posts/assets/2025-15-13-tryhackme-ledger/file-20250514011356337.png",
+    "_posts/assets/2025-15-13-tryhackme-ledger/file-20250514011203342.png",
+    "_posts/assets/2025-15-13-tryhackme-ledger",
     "_posts/2025-05-05-hackthebox-underpass.md",
     "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507230827047.png",
     "_posts/2025-05-05-hackthebox-underpass.md~",
@@ -172,10 +178,6 @@
     "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507220634161.png",
     "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507220415834.png",
     "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507220032674.png",
-    "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507220003326.png",
-    "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507215718225.png",
-    "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507215409750.png",
-    "_posts/assets/2025-05-05-hackthebox-underpass/file-20250507214759505.png",
     "theory/misc/wordpress.md",
     "_site/theory/misc/assets/wordpress",
     "_site/theory/misc/assets",
@@ -185,7 +187,6 @@
     "_posts/4913",
     "_posts/2025-05-05-hackthebox-bigbang.md",
     "_posts/assets/2025-05-05-hackthebox-bigbang",
-    "_posts/assets",
     "_posts/2025-04-24-hackthebox-forest.md",
     "theory/protocols/kerberos.md"
   ]
