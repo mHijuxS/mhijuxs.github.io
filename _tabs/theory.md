@@ -11,6 +11,7 @@ permalink: /theory/
 - [SQL Injection](/theory/misc/sql)
 - [PHP](/theory/misc/php)
 - [Wordpress](/theory/misc/wordpress)
+- [File Inclusion](/theory/misc/file-inclusion)
 
 ## Mobile
 - [Android APK](/theory/mobile/apk)
@@ -19,8 +20,10 @@ permalink: /theory/
 
 - [Kerberos](/theory/protocols/kerberos)
 - [LDAP](/theory/protocols/ldap)
+- [SMB](/theory/protocols/smb)
 
 ## Windows
 ### Active Directory
 - [DCSync](/theory/windows/AD/DCSync)
 - [ACLs](/theory/windows/AD/acl)
+- [ADCS](/theory/windows/AD/adcs)
