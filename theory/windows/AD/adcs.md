@@ -49,16 +49,16 @@ Certificate templates are used to establish certificate properties and settings 
 
 ## ADCS Attacks
 
-### ESC1
+### ESC1 (Enrolee-Supplied Subject for Client Authentication)
 
-The ESC1 attack is a method used to exploit the Active Directory Certificate Services (ADCS) to issue certificates for any user or computer account in the domain. This attack takes advantage of the fact that ADCS does not enforce strict access controls on certificate templates, allowing an attacker to request a certificate for any account.
+The ESC1 attack is a method used to exploit the Active Directory Certificate Services (ADCS) to issue certificates for any user or computer account in the domain. This attack takes advantage of a misconfiguration in the certificate template that allows low-privileged users to request certificates with an arbitrary identity within the certificate's SAN (Subject Alternative Name) field. This can lead to privilege escalation by allowing an attacker to obtain a certificate for a high-privileged account, such as a domain administrator, and then use that certificate to authenticate to the domain.
 
 #### ESC1 Requirements
-- Low-privileged users with enrollment permissions on a certificate template
-- Manager approval should be turned off 
-- No authorized signatures are required
-- The certificate template must be configured to allow the user to request a certificate for any account
-- Certificate template allows requesters to specify a `subjectAltName(SAN)` in the `CSR` (Certificate Signing Request)
+ESC1 is created by the following conditions:
+- **Enrolee Supplies Subject**: The certificate template must allow the enrolee to specify the subject name by having the flag `CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT` set ("Supply in the request" option under the "Subject Name" tab). With this enabled, the user specifies the subject name when requesting a certificate, not the AD.
+- **Authentication EKU**: The certificate template must include an EKU that permits client authentication, such as "Client Authentication" (OID 1.3.6.1.5.5.7.3.2), "Smart Card Logon" (OID 1.3.6.1.4.1.311.20.2.2), "PKINIT Client Authentication" (OID 1.3.6.1.5.2.3.4), or the overly permissive "Any Purpose" (OID 2.5.29.37.0)
+- **Permissive Enroollment Permissions**: The user must have permissions to enroll in the certificate template, which can be granted through the `Enroll` or `Autoenroll` permissions on the template.
+- **No Effective Security Gates**: The certificate template does not enforce manager approval nor requires authorized signatures. 
 
 #### ESC1 Steps
 
