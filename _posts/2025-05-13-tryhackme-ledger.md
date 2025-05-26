@@ -179,7 +179,7 @@ Enumerating the groups for the users that I have control, I can see that they ar
 
 ## ADCS
 
-Enumerating the [`ADCS`](/theory/windows/AD/adcs) with `certipy`, I found a certificate vulnerable to [`ESC1`](/theory/windows/AD/adcs#esc1), which lets me request a certificate for any user, even if I don't have the password for it, as long as the template allows it
+Enumerating the [`ADCS`](/theory/windows/AD/adcs) with `certipy`, I found a certificate vulnerable to `ESC1`, which lets me request a certificate for any user, even if I don't have the password for it, as long as the template allows it
 
 ```bash
 certipy find -u SUSANNA_MCKNIGHT@thm.local -p '<REDACTED>' -vulnerable -stdout
