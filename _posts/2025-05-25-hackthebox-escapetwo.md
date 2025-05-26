@@ -1,7 +1,7 @@
 ---
 title: EscapeTwo
 categories: [HackTheBox]
-tags: [windows, ldap, kerberos, smb, nmap, impacket, passwordcracking, kerbrute, bloodhound, netexec]
+tags: [windows, ldap, kerberos, smb, nmap]
 media_subpath: /images/hackthebox_escapetwo/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/d5fcf2425893a73cf137284e2de580e1.png'
