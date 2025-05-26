@@ -38,6 +38,54 @@ Access rights are the permissions that can be granted to a user or group for an 
 | Add/Remove self as member | Allows modifying the member attribute (group membership changes). | bf9679c0-0de6-11d0-a285-00aa003049e2 | Self-Membership |
 | Validated write to service principal name | Allows modifying the Service Principal Name (SPN) attribute. | f3a64788-5306-11d1-a9c5-0000f80367c1 | Validated-SPN |
 
+### Abuse of Access Rights
+
+#### GenericAll
+grants us full control over a target object. Again, depending on if this is
+granted over a user or group, we could modify group membership, force change a
+password, or perform a targeted Kerberoasting attack. If we have this access over a
+computer object and the Local Administrator Password Solution (LAPS) is in use in the
+environment, we can read the LAPS password and gain local admin access to the
+machine which may aid us in lateral movement or privilege escalation in the domain if
+we can obtain privileged controls or gain some sort of privileged access.
+
+The `GenericAll` permission allows full control over an object, including creating, deleting, and modifying child objects, as well as reading and writing properties. This permission is equivalent to a combination of several rights, making it very powerful.
+
+- Over a user object, it allows:
+  - Modifying group membership
+  - Forcing password changes
+  - Performing Kerberoasting attacks by adding `SPN` to the user object
+  - Perform shadow credentials attacks by adding `msDS-ShadowPrincipal` attribute
+- Over a computer object, it allows:
+  - Reading the Local Administrator Password Solution (LAPS) password
+  - Gaining local admin access to the machine
+- Over a group object, it allows:
+  - Adding or removing members from the group
+  - Modifying group properties
+
+#### WriteOwner
+
+The `WriteOwner` permission allows a user to change the owner of an object. This can be abused to take ownership of objects, by changing the `OwnerSid` sub-attribute within the object's security descriptor. 
+
+- Over a user object, it allows:
+  - Assigning all rights to another account (GenericAll), which can lead to privilege escalation
+  - Performing password resets or targeted Kerberoasting attacks
+- Over a group object, it allows:
+  - Adding or removing members from the group
+  - Modifying group properties
+
+##### Exploitation Example
+
+```bash
+owneredit.py -new-owner <USER> -target <VICTIM> -action write "DOMAIN/USER:PASSWORD"
+```
+
+After taking ownership, you can grant yourself `GenericAll` rights to the object:
+
+```bash
+dacledit.py -action 'write' -rights 'FullControl' -principal 'USER' -target 'VICTIM' "DOMAIN/USER:PASSWORD"
+```
+
 ## References
 - [Microsoft Docs - Access Control Lists](https://learn.microsoft.com/en-us/windows/win32/secmgr/access-control-lists)
 - [HackTheBox](https://www.academy.hackthebox.com)

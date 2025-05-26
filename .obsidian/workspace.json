@@ -4,17 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "af5b8a211af1d557",
+        "id": "e0eb2c61a8759b9f",
         "type": "tabs",
         "children": [
           {
-            "id": "eea49ce3dd3941b6",
+            "id": "76117ce9b6c49c47",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "_posts/2025-05-25-hackthebox-escapetwo.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "2025-05-25-hackthebox-escapetwo"
             }
           }
         ]
@@ -74,7 +78,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "233f528cb0d44306",
@@ -161,38 +166,39 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "eea49ce3dd3941b6",
+  "active": "76117ce9b6c49c47",
   "lastOpenFiles": [
+    "_posts/2025-05-25-hackthebox-escapetwo.md~",
+    "_posts/assets/2025-05-25-hackthebox-escapetwo/file-20250526000120881.png",
+    "_posts/2025-05-25-hackthebox-escapetwo.md",
+    "_posts/assets/2025-05-25-hackthebox-escapetwo/file-20250525203458900.png",
+    "_posts/assets/2025-05-25-hackthebox-escapetwo/file-20250525192818248.png",
+    "_posts/assets/2025-05-25-hackthebox-escapetwo/file-20250525192453278.png",
+    "_posts/assets/2025-05-25-hackthebox-escapetwo/file-20250525191926435.png",
+    "_posts/assets/2025-05-25-hackthebox-escapetwo/file-20250525191221192.png",
+    "_posts/assets/2025-05-25-hackthebox-escapetwo/file-20250525185224247.png",
+    "_posts/assets/2025-05-25-hackthebox-escapetwo",
+    "_posts/assets",
+    "_site/posts/hackthebox-escapetwo/index.html",
+    "_site/posts/hackthebox-escapetwo",
+    "_site/about/index.html",
+    "_site/about",
+    "_site/theory/index.html",
+    "_site/htb/index.html",
+    "_site/htb",
+    "_site/assets/img/favicons/mstile-150x150.png",
+    "_site/theory/protocols/assets/kerberos/file-20250424214228502.png",
+    "_site/theory/misc/assets/wordpress/file-20250506020701461.png",
+    "_posts/2025-04-24-hackthebox-forest.md",
     "_posts/2030-06-06-hackthebox-puppy.md",
-    "_posts/2030-06-06-hackthebox-puppy.md~",
-    "_posts/assets/2030-06-06-hackthebox-puppy/file-20250518050101513.png",
-    "_posts/assets/2030-06-06-hackthebox-puppy/file-20250518042956301.png",
-    "_posts/assets/2030-06-06-hackthebox-puppy/file-20250518042458550.png",
-    "_posts/assets/2030-06-06-hackthebox-puppy/file-20250518042343111.png",
-    "_posts/assets/2030-06-06-hackthebox-puppy/file-20250518042303327.png",
-    "_posts/assets/2030-06-06-hackthebox-puppy/file-20250518042300175.png",
-    "_posts/assets/2030-06-06-hackthebox-puppy/file-20250518042209923.png",
-    "_posts/assets/2030-06-06-hackthebox-puppy/file-20250518042107633.png",
-    "recovery.kdbx",
-    "recovery.kbdx",
-    "_posts/assets/2030-06-06-hackthebox-puppy/file-20250518034844827.png",
-    "_posts/assets/2030-06-06-hackthebox-puppy",
     "_posts/2025-05-17-hackthebox-heal.md",
     "theory/misc/file-inclusion.md",
     "theory/misc/php.md",
     "theory/misc/sql.md",
     "theory/misc/Untitled.md",
-    "images/hackthebox_heal/file-20250514225032259.png",
-    "_posts/2025-04-24-hackthebox-forest.md",
-    "images/hackthebox_heal",
-    "_posts/assets/2025-05-17-hackthebox-heal",
     "_posts/2025-05-05-hackthebox-underpass.md",
     "_posts/2025-15-13-tryhackme-ledger.md",
-    "_posts/assets/2025-15-13-tryhackme-ledger",
-    "_posts/2025-05-05-hackthebox-underpass.md~",
-    "_posts/assets/2025-05-05-hackthebox-underpass",
     "theory/misc/wordpress.md",
-    "_site/theory/misc/assets/wordpress",
     "_posts/2025-05-05-hackthebox-bigbang.md",
     "theory/protocols/kerberos.md"
   ]
