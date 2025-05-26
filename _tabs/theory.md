@@ -24,6 +24,5 @@ permalink: /theory/
 
 ## Windows
 ### Active Directory
-- [DCSync](/theory/windows/AD/DCSync)
 - [ACLs](/theory/windows/AD/acl)
 - [ADCS](/theory/windows/AD/adcs)
