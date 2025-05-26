@@ -402,7 +402,7 @@ We can use `bloodhound` to enumerate the privileges of the `ryan` user. We can u
 rusthound-ce -u "ryan" -p "<REDACTED>" -f "$FQDN" -d "$DOMAIN" -n "$IP" -c All -z
 ```
 
-Looking at the `bloodhound` graph, we can see that the user `ryan` have `WriteOwner` permissions on the `ca_svc` user, which means that we can set the object owner to `ryan` and then give `GenericAll` permissions to the `ryan` user over the `ca_svc` user and then perform a `ShadowCredentials` attack (or many others like force password, targeted kerberoast). 
+Looking at the `bloodhound` graph, we can see that the user `ca_svc` is an important target because it is possible to take vantage of the `ESC4` with him. To reach this target, we see that the user `ryan` has `WriteOwner` permissions on this user, which means that we can set the object owner to `ryan` and then give `GenericAll` permissions to the `ryan` user over the `ca_svc` user and then perform a `ShadowCredentials` attack (or many others like force password, targeted kerberoast). 
 
 ![NON](file-20250525203458900.png)
 
@@ -435,7 +435,7 @@ We can now perform a `ShadowCredentials` attack, which is possible to add “Key
 
 #### Impacket error
 
-Here I've stumbled upon an error which I had seen in many other tools that used the `impacket` library, the `unsupported hash type MD4`
+Here I've stumbled upon an error which I had seen in many other tools that used the `ldap3` library, the `unsupported hash type MD4`
 
 ```bash
 pywhisker -d "$DOMAIN" -u "ryan" -p "<REDACTED>" --target "ca_svc" --action "add"
@@ -443,7 +443,7 @@ pywhisker -d "$DOMAIN" -u "ryan" -p "<REDACTED>" --target "ca_svc" --action "add
 [!] unsupported hash type MD4
 ```
 
-From this post https://github.com/cannatag/ldap3/issues/1051, I've found that the workaround was to install the `pycryptodome` (or add this to the `requirements.txt` file). After installing this package, the command ran without problems
+From this post [ldap3/issues](https://github.com/cannatag/ldap3/issues/1051), I've found that the workaround was to install the `pycryptodome` (or add this to the `requirements.txt` file). After installing this package, the command ran without problems
 
 ```bash
 pywhisker -d "$DOMAIN" -u "ryan" -p "<REDACTED>" --target "ca_svc" --action "add"
