@@ -1,7 +1,7 @@
 ---
 title: Ledger
 categories: [TryHackMe]
-tags: [windows, ldap, kerberos, smb, nmap, impacket, kerbrute, bloodhound, netexec]
+tags: [windows, ldap, kerberos, smb]
 media_subpath: /images/tryhackme_ledger/
 image:
   path: 'https://tryhackme-images.s3.amazonaws.com/room-icons/78aa83616ded14aad892e05c15cc9eb2.png'

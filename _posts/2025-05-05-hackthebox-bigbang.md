@@ -1,7 +1,7 @@
 ---
 title: BigBang
 categories: [HackTheBox]
-tags: [linux, cve, wordpress, portforward, passwordcracking, ]
+tags: [linux, cve, wordpress, portforward, passwordcracking]
 media_subpath: /images/hackthebox_bigbang/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/2d22afd496c5ae6f6c51ca24bf3719e1.png'

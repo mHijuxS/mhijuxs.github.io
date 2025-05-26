@@ -2,7 +2,7 @@
 title: Underpass
 categories:
   - HackTheBox
-tags: [passwordcracking, snmp, linux, nmap]
+tags: [passwordcracking, snmp, linux]
 media_subpath: /images/hackthebox_underpass/
 image:
   path: https://labs.hackthebox.com/storage/avatars/456a4d2e52f182847fb0a2dba0420a44.png
