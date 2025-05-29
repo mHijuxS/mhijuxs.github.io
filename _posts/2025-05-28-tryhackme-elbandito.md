@@ -13,7 +13,7 @@ image:
 # Theories involved
 - [**Server-Side Request Forgery (SSRF)**](/theory/misc/ssrf)
 - [**HTTP/2 Request Smuggling**](/theory/misc/request-smuggling#h2cl-http2-and-content-length))
-- [**HTTP Request Smuggling via WebSockets**](/theory/misc/request-smuggling#request-smuggling-through-websockets)
+- [**HTTP Request Smuggling via WebSockets**](/theory/misc/request-smuggling#request-smuggling-through-web-sockets)
 
 # Walkthrough
 
