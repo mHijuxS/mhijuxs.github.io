@@ -7,6 +7,11 @@ image:
   path: 'https://tryhackme-images.s3.amazonaws.com/room-icons/edb8226745b7607d851bd0258f31227c1cbdad254e1a2d574d97837321fa8e32.618b3fa52f0acc0061fb0172-1747849942798'
 ---
 
+# Summary
+[A bucket of phish](https://tryhackme.com/room/hfb1abucketofphish) is a easy room on TryHackMe, where the goal is to find a flag hidden in a public S3 bucket.
+
+# Walkthrough
+
 ![NON](file-20250528234045382.png)
 
 Looking at the website, we can sett that it is running using the `aws` service, so we can try to list some public informations on the website, like public buckets
