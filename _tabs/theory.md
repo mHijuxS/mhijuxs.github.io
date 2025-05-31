@@ -7,11 +7,13 @@ permalink: /theory/
 
 ## Misc
 - [Command Injection](/theory/misc/cmi)
-- [Port Forward](/theory/misc/portforward)
-- [SQL Injection](/theory/misc/sql)
-- [PHP](/theory/misc/php)
-- [Wordpress](/theory/misc/wordpress)
 - [File Inclusion](/theory/misc/file-inclusion)
+- [PHP](/theory/misc/php)
+- [Port Forward](/theory/misc/portforward)
+- [Request Smuggling](/theory/misc/request-smuggling)
+- [SQL Injection](/theory/misc/sql)
+- [SSRF](/theory/misc/ssrf)
+- [Wordpress](/theory/misc/wordpress)
 
 ## Mobile
 - [Android APK](/theory/mobile/apk)
