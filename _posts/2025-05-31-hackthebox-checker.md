@@ -145,6 +145,8 @@ Looking at the `main` function of the binary, the following snippets are what dr
 
 ![NON](file-20250531045729811.png)
 
+Since I am a little rusty with reverse engineering, I asked ChatGPT to help me understand the code, and it was able to provide a good explanation of the code, which I will summarize below, together with the code it made.
+
 #### Race Condition Explanation
 
 1. High-level picture
