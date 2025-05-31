@@ -167,6 +167,7 @@ sudo check-leak.sh  <user>
 
 ```
 So the vulnerability is really the combination of two smaller problems:
+
 |#|	Bug	Where	| Why it matters |
 |---|---|---|
 |1|	World-writable shared memory key is revealed to the attacker|	write_to_shm() prints 0x%X, then sleep(1)	Attacker can attach before notify_user() reads it|
