@@ -10,6 +10,9 @@ image:
 # Summary
 [A bucket of phish](https://tryhackme.com/room/hfb1abucketofphish) is a easy room on TryHackMe, where the goal is to find a flag hidden in a public S3 bucket.
 
+# Theory Used
+[**AWS S3**](/theory/misc/aws#s3-buckets-pentesting)
+
 # Walkthrough
 
 ![NON](file-20250528234045382.png)

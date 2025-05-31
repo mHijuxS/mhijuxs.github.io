@@ -6,6 +6,7 @@ permalink: /theory/
 ---
 
 ## Misc
+- [AWS](/theory/misc/aws)
 - [Command Injection](/theory/misc/cmi)
 - [File Inclusion](/theory/misc/file-inclusion)
 - [PHP](/theory/misc/php)
