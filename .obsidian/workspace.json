@@ -4,17 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "674c1ab776635dbd",
+        "id": "83d892f3a068adad",
         "type": "tabs",
         "children": [
           {
-            "id": "09dad6e8b568eabd",
+            "id": "f0283e9828b8c4a0",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "_posts/2025-05-31-hackthebox-checker.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "2025-05-31-hackthebox-checker"
             }
           }
         ]
@@ -162,22 +166,24 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "09dad6e8b568eabd",
+  "active": "f0283e9828b8c4a0",
   "lastOpenFiles": [
+    "_posts/2025-05-31-hackthebox-checker.md~",
+    "_site/images/hackthebox_checker/file-20250531045729811.png",
+    "_site/images/hackthebox_checker/file-20250531045555108.png",
+    "_site/images/hackthebox_checker/file-20250531044430724.png",
+    "_site/images/hackthebox_checker/file-20250531043730079.png",
+    "_site/images/hackthebox_checker/file-20250531032632681.png",
+    "images/hackthebox_checker/file-20250531045729811.png",
+    "images/hackthebox_checker/file-20250531045555108.png",
+    "images/hackthebox_checker/file-20250531044430724.png",
+    "images/hackthebox_checker/file-20250531043730079.png",
+    "images/hackthebox_checker/file-20250531032632681.png",
+    "_posts/4913",
+    "_posts/assets/2025-05-31-hackthebox-checker",
     "_posts/2025-05-28-tryhackme-elbandito.md",
     "_posts/2025-05-28-tryhackme-elbandito.md~",
-    "_posts/assets/2025-05-28-tryhackme-elbandito/file-20250529011719290.png",
-    "_posts/assets/2025-05-28-tryhackme-elbandito/file-20250529011706884.png",
-    "_posts/assets/2025-05-28-tryhackme-elbandito/file-20250529011626060.png",
-    "_posts/assets/2025-05-28-tryhackme-elbandito/file-20250529011436239.png",
-    "_posts/assets/2025-05-28-tryhackme-elbandito/file-20250529011413674.png",
     "_posts/2025-05-28-tryhackme-abucketofphish.md",
-    "_posts/assets/2025-05-28-tryhackme-elbandito/file-20250529010826809.png",
-    "_posts/assets/2025-05-28-tryhackme-elbandito/file-20250529010733148.png",
-    "_posts/assets/2025-05-28-tryhackme-elbandito/file-20250529010717005.png",
-    "_posts/assets/2025-05-28-tryhackme-elbandito/file-20250529005711986.png",
-    "_posts/4913",
-    "_posts/assets/2025-05-28-tryhackme-elbandito/file-20250529005251726.png",
     "_posts/assets/2025-05-28-tryhackme-elbandito",
     "_posts/assets/2030-05-05-hackthebox-test.md",
     "_posts/assets/2025-05-28-tryhackme-abucketofphish",
@@ -195,8 +201,6 @@
     "_posts/2025-05-25-hackthebox-escapetwo.md~",
     "_posts/assets/2025-05-25-hackthebox-escapetwo",
     "_posts/assets",
-    "_site/posts/hackthebox-escapetwo/index.html",
-    "_site/posts/hackthebox-escapetwo",
     "_posts/2025-04-24-hackthebox-forest.md",
     "_posts/2030-06-06-hackthebox-puppy.md",
     "theory/misc/file-inclusion.md",
