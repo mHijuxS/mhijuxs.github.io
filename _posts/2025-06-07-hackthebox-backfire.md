@@ -16,6 +16,7 @@ Backfire is a Medium difficulty HackTheBox machine that involves exploiting a vu
 # Theory Used
 - [Port Forwarding](/theory/misc/portforward/#ssh-local-port-forwarding)
 - [SSRF](/theory/misc/ssrf/)
+
 # Walkthrough
 
 
