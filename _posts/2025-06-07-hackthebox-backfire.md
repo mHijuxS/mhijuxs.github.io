@@ -10,6 +10,9 @@ image:
 
 
 # Summary
+
+Backfire is a Medium difficulty HackTheBox machine that involves exploiting a vulnerability in the Havoc C2 framework to gain remote code execution (RCE) through a Server-Side Request Forgery (SSRF) attack. At the time of launch, only the separated exploits were available, so we needed to adapt and join both of them to create a functional exploit script. After getting access to the machine, another vulnerable `C2` framework was found, giving us access to another user, which we used to escalate privileges to the root user because of `sudo` misconfiguration. The machine is a great example of how to chain multiple vulnerabilities together to make a functional exploit script. 
+
 # Theory Used
 - [Port Forwarding](/theory/misc/portforward/#ssh-local-port-forwarding)
 - [SSRF](/theory/misc/ssrf/)
