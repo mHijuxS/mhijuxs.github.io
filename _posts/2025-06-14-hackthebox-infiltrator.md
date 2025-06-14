@@ -19,7 +19,7 @@ Inside the machine, this user had a received file in the `Received Files` folder
 # Theory Used
 - [AS-REP Roasting](/theory/protocols/kerberos#as-rep-roast-attack)
 - [ESC4](/theory/windows/AD/adcs/#esc4-template-hijacking)
-- [Port Forwarding](http://0.tcp.sa.ngrok.io:13604/theory/misc/portforward/)
+- [Port Forwarding](/theory/misc/portforward/)
 
 # Tools Used
 - [Certipy](https://github.com/ly4k/Certipy)
