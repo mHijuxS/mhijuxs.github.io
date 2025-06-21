@@ -77,7 +77,7 @@ services:
 
 We take note of the MySQL root password and move in to the `flask-app` repository. In this repository, we find the source code of a Flask application which is used to manage tickets (the one on `titanic.htb`). The application has an endpoint `/download` which allows us to download files from the server. 
 
-Inside the app code for this endpoint, we can see that it uses the `ticket` parameter to determine the file to download. The code is vulnerable to directory traversal attacks, allowing us to access files outside the intended directory.
+Inside the app code for this endpoint, we can see that it uses the `ticket` parameter to determine the file to download. The code is vulnerable to directory traversal attacks, because it is simply joining the `ticket` parameter with the `TICKETS_DIR` variable without any validation or sanitization, allowing us to access files outside the intended directory.
 
 ![NON](file-20250620205810354.png)
 
