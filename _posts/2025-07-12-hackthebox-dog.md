@@ -7,6 +7,11 @@ image:
   path: 'https://labs.hackthebox.com/storage/avatars/426830ea2ae4f05f7892ad89195f8276.png'
 ---
 
+# Summary 
+Dog is a retired easy HackTheBox machine that involves exploiting a vulnerable version of Backdrop CMS to gain initial access by reading an exposed `.git` folder, enumerating valid username and password for the administration page and exploiting a vulnerability from the running version of the CMS, followed by privilege escalation through a backdrop CMS cli utilitary, called `bee`.
+
+# Walkthrough
+
 ## Nmap
 ```bash
 22/tcp open  ssh     syn-ack OpenSSH 8.2p1 Ubuntu 4ubuntu0.12 (Ubuntu Linux; protocol 2.0)
