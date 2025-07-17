@@ -13,6 +13,7 @@ Dog is a retired easy HackTheBox machine that involves exploiting a vulnerable v
 # Walkthrough
 
 ## Nmap Scan
+
 ```bash
 sudo nmap -Pn -sVC -oN nmap $IP -p-
 ```
