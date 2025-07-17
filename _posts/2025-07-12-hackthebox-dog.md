@@ -14,6 +14,10 @@ Dog is a retired easy HackTheBox machine that involves exploiting a vulnerable v
 
 ## Nmap Scan
 ```bash
+sudo nmap -Pn -sVC -oN nmap $IP -p-
+```
+
+```bash
 22/tcp open  ssh     syn-ack OpenSSH 8.2p1 Ubuntu 4ubuntu0.12 (Ubuntu Linux; protocol 2.0)
 80/tcp open  http    syn-ack Apache httpd 2.4.41 ((Ubuntu))
 ```
