@@ -199,7 +199,7 @@ We can forward this local port to our machine using the `ssh` command with the `
 
 ![NON](file-20250813204412366.png)
 
-### 8080 - Web Server ISPCONFIG
+## 8080 - Web Server ISPCONFIG
 By accessing `http://localhost:8080`, we can see that there is a web application for `ISPCONFIG` running on this port.
 
 ![NON](file-20250813204431290.png)
