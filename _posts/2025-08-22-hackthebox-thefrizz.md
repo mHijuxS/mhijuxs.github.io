@@ -1,7 +1,7 @@
 ---
 title: TheFrizz
 categories: [HackTheBox]
-tags: []
+tags: [adrecyclebin, cve, kerberos, ldap, gpo]
 media_subpath: /images/hackthebox_thefrizz/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/c91ef1b641cf88156c7a9d3793d54216.png'
