@@ -8,7 +8,13 @@ image:
 ---
 
 # Summary
-TheFrizz is a medium difficulty Windows machine from HackTheBox. Initial reconnaissance revealed an Apache web server hosting Gibbon LMS, which was vulnerable to an unauthenticated RCE. This vulnerability allowed us to gain a foothold on the machine as a low-privileged user. Further enumeration uncovered database credentials that led to access to a Domain user credentials. Since `WinRM` and `RDP` were not available, we used Kerberos authentication to access the machine via `SSH`. Once inside, we discovered that the user had some files in the Recycle Bin, including a backup file containing configuration files with a password. Using this password, we performed a password spray attack and found a user with permissions `WriteGPLink` on the `Domain Controllers` OU. From creating a GPO and linking it to the `Domain Controllers` OU, we were able to add our user to the local Administrators group on the Domain Controllers OU using `SharpGPOAbuse`. By exploiting this permissions, we added our user to the local Administrators group and stopped being able to login via `SSH` since `Administrators` can't login via `SSH`. To bypass this, we used the `RunasCs.exe` tool to get a shell with our local `Administrator` user, gaining full system compromise.
+`TheFrizz` was a medium difficulty Windows machine from HackTheBox. Initial reconnaissance revealed an Apache web server hosting `Gibbon LMS`, which was vulnerable to an unauthenticated `RCE`. This vulnerability allowed us to gain a foothold on the machine as a low-privileged user. 
+
+Further enumeration uncovered database credentials that led to access to a Domain user credentials. Since `WinRM` and `RDP` were not available, we used Kerberos authentication to access the machine via `SSH`. 
+
+Once inside, we discovered that the user had some files in the Recycle Bin, including a backup file containing configuration files with a password. Using this password, we performed a password spray attack and found a user with permissions `WriteGPLink` on the `Domain Controllers` `OU`. 
+
+By creating a `GPO` and linking it to the `Domain Controllers` `OU`, we were able to add our user to the local `Administrators` group on the Domain Controllers `OU` using `SharpGPOAbuse`. After exploiting this permission, we added our user to the local `Administrators` group and stopped being able to login via `SSH` since `Administrators` can't login via `SSH`. To bypass this, we used the `RunasCs.exe` tool to get a shell with our local `Administrator` user, gaining full system compromise.
 
 ## Nmap
 
