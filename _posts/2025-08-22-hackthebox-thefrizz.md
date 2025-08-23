@@ -7,6 +7,11 @@ image:
   path: 'https://labs.hackthebox.com/storage/avatars/c91ef1b641cf88156c7a9d3793d54216.png'
 ---
 
+# Summary
+TheFrizz is a medium difficulty Windows machine from HackTheBox. Initial reconnaissance revealed an Apache web server hosting Gibbon LMS, which was vulnerable to an unauthenticated RCE. This vulnerability allowed us to gain a foothold on the machine as a low-privileged user. Further enumeration uncovered database credentials that led to access to a Domain user credentials. Since `WinRM` and `RDP` were not available, we used Kerberos authentication to access the machine via `SSH`. Once inside, we discovered that the user had some files in the Recycle Bin, including a backup file containing configuration files with a password. Using this password, we performed a password spray attack and found a user with permissions `WriteGPLink` on the `Domain Controllers` OU. From creating a GPO and linking it to the `Domain Controllers` OU, we were able to add our user to the local Administrators group on the Domain Controllers OU using `SharpGPOAbuse`. By exploiting this permissions, we added our user to the local Administrators group and stopped being able to login via `SSH` since `Administrators` can't login via `SSH`. To bypass this, we used the `RunasCs.exe` tool to get a shell with our local `Administrator` user, gaining full system compromise.
+
+the LDAP service and discovery of a user with permissions to create Group Policy Objects (GPOs). By exploiting these permissions, we were able to escalate our privileges and ultimately compromise the entire system.
+The initial foothold was achieved through an unauthenticated RCE in Gibbon LMS, leading to a reverse shell as a low-privileged user. Further enumeration revealed database credentials, allowing access to the LDAP service and discovery of a user with permissions to create GPOs. By exploiting these permissions, we were able to add our user to the local Administrators group on the Domain Controllers OU, ultimately leading to full system compromise.
 
 ## Nmap
 
