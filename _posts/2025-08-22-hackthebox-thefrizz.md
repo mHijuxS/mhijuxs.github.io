@@ -252,6 +252,7 @@ PS C:\Users\f.frizzle> whoami
 frizz\f.frizzle
 PS C:\Users\f.frizzle>
 ```
+### Root
 
 After some enumeration, listing the files inside the Recycle Bin we can see that there are some files inside it.
 
