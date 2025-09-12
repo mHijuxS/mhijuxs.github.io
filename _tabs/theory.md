@@ -29,3 +29,4 @@ permalink: /theory/
 ### Active Directory
 - [ACLs](/theory/windows/AD/acl)
 - [ADCS](/theory/windows/AD/adcs)
+- [Delegation](/theory/windows/delegation)
