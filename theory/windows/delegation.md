@@ -524,10 +524,3 @@ if ($delegation) {
 - [Medium - Constrained Delegation](https://medium.com/@harikrishnanp006/constrained-delegation-6aff5d1b9d16)
 
 ---
-
-## Related Topics
-
-- [Kerberos Protocol](/theory/windows/kerberos/)
-- [Active Directory Security](/theory/windows/active-directory/)
-- [Privilege Escalation](/theory/windows/privilege-escalation/)
-- [Lateral Movement](/theory/windows/lateral-movement/)
