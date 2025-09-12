@@ -11,7 +11,7 @@ image:
 
 ## Overview
 
-Planning is a Medium Linux machine that demonstrates web application exploitation, container escape techniques, and privilege escalation through cron job manipulation. The machine features a Grafana instance vulnerable to CVE-2024-9264, leading to container escape and eventual root access.
+Planning is an Easy Linux machine that demonstrates web application exploitation, container escape techniques, and privilege escalation through cron job manipulation. The machine features a Grafana instance vulnerable to CVE-2024-9264, leading to container escape and eventual root access.
 
 **Difficulty:** Medium  
 **OS:** Linux  
