@@ -77,9 +77,6 @@ nxc ldap fluffy.htb -u j.fleischman -p 'J0elTHEM4n1990!' --groups 'Remote Manage
 
 **Key Finding:** The `winrm_svc` user is a member of the Remote Management Users group, indicating it has WinRM privileges and could be a potential target for lateral movement.
 
-> **Note:** winrm service user has winrm privileges
-{: .prompt-info}
-
 ### SMB Share Enumeration
 
 Let's enumerate SMB shares to identify accessible resources:
@@ -92,8 +89,6 @@ nxc smb fluffy.htb -u j.fleischman -p 'J0elTHEM4n1990!' --shares
 
 **Key Finding:** We have read/write access to the `IT` share, which could contain sensitive information or allow us to upload malicious files.
 
-> **Note:** Read write on IT
-{: .prompt-info}
 
 ### SMB Share Access
 
@@ -113,9 +108,6 @@ get upgrade_notice.pdf
 ![Using smbclient to access shares](file-20250806143042341.png)
 
 **Key Finding:** We discover an `upgrade_notice.pdf` file that contains information about recent vulnerabilities with CVE IDs and severity levels.
-
-> **Note:** download upgrade_notice.pdf that shows a list of recent vulnerabilities with cve ids and severity
-{: .prompt-info}
 
 ---
 
@@ -155,9 +147,6 @@ The exploit involves uploading a malicious `.library-ms` file that triggers an N
 
 **Result:** We successfully capture an NTLM hash for user `p.agila`.
 
-> **Note:** upload the xd.library-ms file and wait on the responder.py, we get a hash for p.agila
-{: .prompt-info}
-
 ### Hash Cracking
 
 Using John the Ripper to crack the captured NTLM hash:
@@ -169,9 +158,6 @@ john --wordlist=/usr/share/wordlists/rockyou.txt hash.txt
 ![Password Crack](file-20250806144943989.png)
 
 **Cracked Credentials:** `p.agila:prometheusx-303`
-
-> **Note:** Cracking the hash with john we get the password
-{: .prompt-info}
 
 ---
 
@@ -188,9 +174,6 @@ bloodyAD -d fluffy.htb --host 10.129.14.248 -u p.agila -p prometheusx-303 get wr
 ![bloodyAD get writable](file-20250806145813884.png)
 
 **Key Finding:** User `p.agila` has `GenericAll` permissions over service accounts, which is a significant privilege escalation opportunity.
-
-> **Note:** looking at the bloodyAD 'get writable' we can see that the user p.agila has genericall over service accounts
-{: .prompt-info}
 
 ### Group Membership Manipulation
 
@@ -338,7 +321,7 @@ The ESC16 vulnerability indicates that the Security Extension is disabled on the
 - **Prerequisites:** Cert Publishers group membership
 
 
-> **Note:** Cert publishers can enroll at the ca -> ca_svc the victim for the attack
+> **Note:** Cert publishers can enroll at the ca -> `ca_svc` the victim for the attack
 {: .prompt-info}
 
 ---
