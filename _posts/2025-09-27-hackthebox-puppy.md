@@ -24,7 +24,7 @@ This machine demonstrates several critical Active Directory attack techniques:
 - **Active Directory Enumeration** - BloodHound analysis and LDAP enumeration 
 - **Password Cracking** - KeePass database cracking with John the Ripper
 - **Active Directory ACL Abuse** - Exploiting GenericAll permissions ([Theory](/theory/windows/AD/acl/))
-- **DPAPI Credential Extraction** - Extracting stored credentials from Windows Credential Manager ([Theory](/theory/windows/AD/dpapi/))
+- **DPAPI Credential Extraction** - Extracting stored credentials from Windows Credential Manager 
 
 ---
 
