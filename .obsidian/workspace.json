@@ -11,10 +11,14 @@
             "id": "b4ff611b3f23e70e",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "_posts/2025-09-27-hackthebox-puppy.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "2025-09-27-hackthebox-puppy"
             }
           }
         ]
@@ -70,12 +74,12 @@
               "title": "Bookmarks"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "horizontal",
-    "width": 200
+    "width": 200,
+    "collapsed": true
   },
   "right": {
     "id": "233f528cb0d44306",
@@ -164,35 +168,36 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "72de7cb06a2a1ec2",
+  "active": "b4ff611b3f23e70e",
   "lastOpenFiles": [
+    "_posts/assets/2025-09-27-hackthebox-puppy/file-20250927215348209.png",
+    "_posts/assets/2025-09-27-hackthebox-puppy/file-20250927214535212.png",
+    "_posts/assets/2025-09-27-hackthebox-puppy",
+    "bhcollect_output/bhce_20250927214112_bloodhound.zip",
+    "bhce_20250927214112_bloodhound.zip",
+    "bhce_20250927214112_computers.json",
+    "bhce_20250927214112_domains.json",
+    "bhce_20250927214112_containers.json",
+    "bhce_20250927214112_ous.json",
+    "bhce_20250927214112_gpos.json",
+    "bhce_20250927214112_groups.json",
+    "bhce_20250927214112_users.json",
     "_posts/2025-09-20-hackthebox-fluffy.md",
     "_posts/2025-09-12-hackthebox-delegate.md",
-    "_posts/2025-09-12-hackthebox-delegate.md~",
     "_site/images/hackthebox_delegate/file-20250912160052536.png",
     "images/hackthebox_delegate/file-20250912160052536.png",
     "_posts/assets/2025-09-12-hackthebox-delegate/file-20250912160052536.png",
     "_site/images/hackthebox_delegate/file-20250912155745625.png",
     "images/hackthebox_delegate/file-20250912155745625.png",
     "_posts/assets/2025-09-12-hackthebox-delegate/file-20250912155745625.png",
-    "_posts/assets/2025-09-12-hackthebox-delegate",
     "_posts/2025-08-22-hackthebox-thefrizz.md",
-    "_posts/2025-08-22-hackthebox-thefrizz.md~",
     "_site/images/hackthebox_thefrizz/file-20250823014426995.png",
     "images/hackthebox_thefrizz/file-20250823014426995.png",
     "_posts/assets/2025-08-22-hackthebox-thefrizz/file-20250823014426995.png",
-    "_site/images/hackthebox_thefrizz/file-20250823012503777.png",
-    "_posts/assets/2025-08-22-hackthebox-thefrizz",
     "_posts/2025-05-31-hackthebox-checker.md",
-    "_posts/2025-05-31-hackthebox-checker.md~",
-    "_posts/4913",
-    "_posts/assets/2025-05-31-hackthebox-checker",
     "_posts/2025-05-28-tryhackme-elbandito.md",
-    "_posts/2025-05-28-tryhackme-elbandito.md~",
     "_posts/2025-05-28-tryhackme-abucketofphish.md",
-    "_posts/assets/2025-05-28-tryhackme-elbandito",
     "_posts/assets/2030-05-05-hackthebox-test.md",
-    "_posts/assets/2025-05-28-tryhackme-abucketofphish",
     "_posts/2025-05-13-tryhackme-ledger.md",
     "_posts/2025-05-13-tryhackme-TESTE.md",
     "Templates/htb.md",
@@ -210,7 +215,6 @@
     "theory/misc/sql.md",
     "theory/misc/Untitled.md",
     "_posts/2025-05-05-hackthebox-underpass.md",
-    "_posts/2025-15-13-tryhackme-ledger.md",
-    "theory/misc/wordpress.md"
+    "_posts/2025-15-13-tryhackme-ledger.md"
   ]
 }
