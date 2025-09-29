@@ -10,6 +10,7 @@ permalink: /theory/
 - [Command Injection](/theory/misc/cmi)
 - [File Inclusion](/theory/misc/file-inclusion)
 - [PHP](/theory/misc/php)
+- [PHAR Deserialization](/theory/misc/phar-deserialization)
 - [Port Forward](/theory/misc/portforward)
 - [Request Smuggling](/theory/misc/request-smuggling)
 - [SQL Injection](/theory/misc/sql)

@@ -8,7 +8,7 @@ image:
 ---
 
 ## Summary
-**Investment House** is a Hard-rated `HackingClub` machine that demonstrates a sophisticated attack chain involving multiple web vulnerabilities and reversing binaries techniques. The attack begins with discovering a hidden API endpoint through virtual host fuzzing, followed by exploiting an arbitrary file read vulnerability to extract application source code. Through careful analysis of the PHP application, we identify a `PHAR` deserialization vulnerability that allows us to write arbitrary files to the server. After gaining initial access through a web shell, we discover a SUID binary that contains a SQL injection vulnerability, which we exploit to load a malicious shared library and achieve root access.
+**Investment House** is a Hard-rated `HackingClub` machine that demonstrates a sophisticated attack chain involving multiple web vulnerabilities and reversing binaries techniques. The attack begins with discovering a hidden API endpoint through virtual host fuzzing, followed by exploiting an arbitrary file read vulnerability to extract application source code. Through careful analysis of the PHP application, we identify a [PHAR deserialization](/theory/misc/phar-deserialization) vulnerability that allows us to write arbitrary files to the server. After gaining initial access through a web shell, we discover a SUID binary that contains a SQL injection vulnerability, which we exploit to load a malicious shared library and achieve root access.
 
 ## Nmap Scan
 
