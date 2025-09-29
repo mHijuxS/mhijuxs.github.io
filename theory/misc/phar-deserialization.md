@@ -360,16 +360,6 @@ PHAR deserialization is a powerful and often overlooked attack vector that can l
 
 ## References
 
-### Official Documentation
-- [PHP Manual: Introduction to Phar](https://www.php.net/manual/en/phar.intro.php) - Official PHP documentation on PHAR archives
-- [PHP Manual: Phar Security](https://www.php.net/manual/en/phar.security.php) - Security considerations for PHAR files
-- [PHP Manual: Phar Metadata](https://www.php.net/manual/en/phar.getmetadata.php) - Documentation on PHAR metadata handling
-
-### Security Research and Vulnerabilities
-- [PHP Bug #75054: Denial of Service in Deserialization](https://bugs.php.net/bug.php?id=75054) - DoS vulnerability in PHP deserialization
-- [PHP Bug #76774: Disable Concrete Types in PHAR Metadata](https://bugs.php.net/bug.php?id=76774) - Security issue with concrete types in PHAR metadata
-- [PHP Bug #69324: Buffer Over-read in PHAR Unserialize](https://bugs.php.net/bug.php?id=69324) - Buffer over-read vulnerability in PHAR parsing
-
 ### Security Articles and Research
 - [PHAR Deserialization Attacks Explained](https://blog.seclify.com/phar-deserialization-attacks-explained/) - Comprehensive explanation of PHAR deserialization attacks
 - [Diving into unserialize(): Phar Deserialization](https://vickieli.medium.com/diving-into-unserialize-phar-deserialization-98b1254380e9) - Detailed analysis of PHAR deserialization vulnerabilities
