@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "b3d0a6813b4d3707",
+        "id": "208ead7cc0e3bb42",
         "type": "tabs",
         "children": [
           {
-            "id": "b4ff611b3f23e70e",
+            "id": "e0b5a44fa53ac8be",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "_posts/2025-09-27-hackthebox-puppy.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "2025-09-27-hackthebox-puppy"
+              "title": "New tab"
             }
           }
         ]
@@ -78,8 +74,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200,
-    "collapsed": true
+    "width": 200
   },
   "right": {
     "id": "233f528cb0d44306",
@@ -168,8 +163,15 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "b4ff611b3f23e70e",
+  "active": "e0b5a44fa53ac8be",
   "lastOpenFiles": [
+    "theory/misc/phar-deserialization.md~",
+    "_site/theory/misc/phar-deserialization.html",
+    "theory/misc/phar-deserialization.md",
+    "_posts/2025-09-29-hackingclub-investmenthouse.md",
+    "_posts/2025-09-09-hackingclub-investmenthouse.md",
+    "_posts/hackingclub-investmenthouse.md",
+    "_posts/2025-09-27-hackthebox-puppy.md",
     "_posts/assets/2025-09-27-hackthebox-puppy/file-20250927215348209.png",
     "_posts/assets/2025-09-27-hackthebox-puppy/file-20250927214535212.png",
     "_posts/assets/2025-09-27-hackthebox-puppy",
@@ -181,7 +183,6 @@
     "bhce_20250927214112_ous.json",
     "bhce_20250927214112_gpos.json",
     "bhce_20250927214112_groups.json",
-    "bhce_20250927214112_users.json",
     "_posts/2025-09-20-hackthebox-fluffy.md",
     "_posts/2025-09-12-hackthebox-delegate.md",
     "_site/images/hackthebox_delegate/file-20250912160052536.png",
@@ -193,7 +194,6 @@
     "_posts/2025-08-22-hackthebox-thefrizz.md",
     "_site/images/hackthebox_thefrizz/file-20250823014426995.png",
     "images/hackthebox_thefrizz/file-20250823014426995.png",
-    "_posts/assets/2025-08-22-hackthebox-thefrizz/file-20250823014426995.png",
     "_posts/2025-05-31-hackthebox-checker.md",
     "_posts/2025-05-28-tryhackme-elbandito.md",
     "_posts/2025-05-28-tryhackme-abucketofphish.md",
@@ -210,11 +210,6 @@
     "_posts/2025-05-25-hackthebox-escapetwo.md",
     "_posts/2025-04-24-hackthebox-forest.md",
     "_posts/2030-06-06-hackthebox-puppy.md",
-    "theory/misc/file-inclusion.md",
-    "theory/misc/php.md",
-    "theory/misc/sql.md",
-    "theory/misc/Untitled.md",
-    "_posts/2025-05-05-hackthebox-underpass.md",
-    "_posts/2025-15-13-tryhackme-ledger.md"
+    "theory/misc/file-inclusion.md"
   ]
 }
