@@ -18,17 +18,14 @@ image:
 ## Table of Contents
 
 1. [Initial Enumeration](#initial-enumeration)
-2. [Subdomain Discovery](#subdomain-discovery)
+2. [Web Application Exploration](#web-application-exploration)
 3. [Git Repository Analysis](#git-repository-analysis)
 4. [AWS Lambda Enumeration](#aws-lambda-enumeration)
 5. [MongoDB Database Manipulation](#mongodb-database-manipulation)
 6. [Web Application Access](#web-application-access)
-7. [File Upload Vulnerability](#file-upload-vulnerability)
-8. [Initial System Access](#initial-system-access)
-9. [SUID Binary Analysis](#suid-binary-analysis)
-10. [Privilege Escalation](#privilege-escalation)
-11. [Root Access](#root-access)
-12. [Summary of Looted Flags](#summary-of-looted-flags)
+7. [SUID Binary Analysis](#suid-binary-analysis)
+8. [Privilege Escalation](#privilege-escalation)
+9. [Conclusion](#conclusion)
 
 ---
 

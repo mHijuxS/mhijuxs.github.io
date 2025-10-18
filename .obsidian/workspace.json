@@ -11,10 +11,14 @@
             "id": "e0b5a44fa53ac8be",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "_posts/2025-10-10-hackthebox-tombwatcher.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "2025-10-10-hackthebox-tombwatcher"
             }
           }
         ]
@@ -165,6 +169,7 @@
   },
   "active": "e0b5a44fa53ac8be",
   "lastOpenFiles": [
+    "_posts/2025-10-10-hackthebox-darkzero.md",
     "theory/misc/phar-deserialization.md~",
     "_site/theory/misc/phar-deserialization.html",
     "theory/misc/phar-deserialization.md",
@@ -182,7 +187,6 @@
     "bhce_20250927214112_containers.json",
     "bhce_20250927214112_ous.json",
     "bhce_20250927214112_gpos.json",
-    "bhce_20250927214112_groups.json",
     "_posts/2025-09-20-hackthebox-fluffy.md",
     "_posts/2025-09-12-hackthebox-delegate.md",
     "_site/images/hackthebox_delegate/file-20250912160052536.png",
