@@ -1,7 +1,7 @@
 ---
 title: DarkCorp
 categories: [HackTheBox]
-tags: [nmap, xss, sql-injection, postgresql, ntlm-relay, dnsadmin, kerberos-relay, adcs, silver-ticket, dpapi, shadow-credentials, gpo-abuse, insane]
+tags: [nmap, xss, sql-injection, postgresql, ntlm-relay, dnsadmin, kerberos-relay, adcs, silver-ticket, dpapi, shadow-credentials, gpo, windows]
 media_subpath: /images/hackthebox_darkcorp/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/93fba06a4780b65be5a5a4f9512b8e78.png'
@@ -17,24 +17,25 @@ image:
 
 ## Table of Contents
 
-1. [Initial Enumeration](#initial-enumeration)
-2. [Web Exploration on Port 80](#web-exploration-on-port-80)
-3. [Discovering the `.env` File & Database Credentials](#discovering-the-env-file--database-credentials)
-4. [Password Reset for `bcase` via an XSS Exploit](#password-reset-for-bcase-via-an-xss-exploit)
-5. [PostgreSQL Injection & Filter Evasion to Obtain Reverse Shell](#postgresql-injection--filter-evasion-to-obtain-reverse-shell)
-6. [Decrypting the `.gpg` Backup & Finding Domain Credentials](#decrypting-the-gpg-backup--finding-domain-credentials)
-7. [Pivot into the Domain Environment](#pivot-into-the-domain-environment)
-8. [NTLM Relay & Discovery of `svc_acc` as a DNS Admin](#ntlm-relay--discovery-of-svc_acc-as-a-dns-admin)
-9. [DNSAdmin to Kerberos Relay with PetitPotam & krbrelayx](#dnsadmin-to-kerberos-relay-with-petitpotam--krbrelayx)
-10. [Silver Ticket Attack on `WEB-01` to Get Administrator Access](#silver-ticket-attack-on-web-01-to-get-administrator-access)
-11. [Dumping DPAPI Secrets & Obtaining Local Administrator Password](#dumping-dpapi-secrets--obtaining-local-administrator-password)
-12. [Password Spray & Finding `john.w` Credentials](#password-spray--finding-johnw-credentials)
-13. [Shadow Credentials Attack on `angela.w`](#shadow-credentials-attack-on-angelaw)
-14. [Abusing Kerberos Name-Type (ENTERPRISE Principals) to Become `taylor.b.adm`](#abusing-kerberos-name-type-enterprise-principals-to-become-taylorbadm)
-15. [Gaining Root on the Linux Host & Extracting Cached Credentials](#gaining-root-on-the-linux-host--extracting-cached-credentials)
-16. [Final GPO Abuse for Domain Admin Privileges](#final-gpo-abuse-for-domain-admin-privileges)
-17. [Summary of Looted Flags & Access](#summary-of-looted-flags--access)
-18. [Additional / Unintended Attack Vectors](#additional--unintended-attack-vectors)
+1. [Nmap](#nmap)
+2. [Web Application Enumeration](#web-application-enumeration)
+3. [Information Disclosure - Environment File](#information-disclosure---environment-file)
+4. [XSS Exploitation - Password Reset Interception](#xss-exploitation---password-reset-interception)
+5. [SQL Injection - PostgreSQL RCE](#sql-injection---postgresql-rce)
+6. [Credential Recovery - GPG Decryption](#credential-recovery---gpg-decryption)
+7. [Network Pivoting - Domain Environment Access](#network-pivoting---domain-environment-access)
+8. [NTLM Relay Attack - DNSAdmin Compromise](#ntlm-relay-attack---dnsadmin-compromise)
+9. [Kerberos Relay Attack - Machine Certificate Theft](#kerberos-relay-attack---machine-certificate-theft)
+10. [Silver Ticket Attack - Local Administrator Access](#silver-ticket-attack---local-administrator-access)
+11. [DPAPI Secrets Extraction - Credential Harvesting](#dpapi-secrets-extraction---credential-harvesting)
+12. [Password Spray Attack - Domain User Discovery](#password-spray-attack---domain-user-discovery)
+13. [Bloodhound with DNSCHEF](#bloodhound-with-dnschef)
+14. [Shadow Credentials Attack - Privilege Escalation](#shadow-credentials-attack---privilege-escalation)
+15. [Kerberos ENTERPRISE Name-Type Abuse - Domain Admin Impersonation](#kerberos-enterprise-name-type-abuse---domain-admin-impersonation)
+16. [Linux Privilege Escalation - SSSD Credential Extraction](#linux-privilege-escalation---sssd-credential-extraction)
+17. [GPO Abuse - Final Domain Admin Escalation](#gpo-abuse---final-domain-admin-escalation)
+18. [Conclusion](#conclusion)
+19. [Alternative Attack Paths](#alternative-attack-paths)
 
 ---
 
