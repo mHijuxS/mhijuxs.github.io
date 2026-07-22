@@ -1,7 +1,7 @@
 ---
 title: Fluffy
 categories: [HackTheBox]
-tags: [windows, ldap, kerberos, smb, nmap, passwordcracking, adcs, shadow-credentials, esc16]
+tags: [windows, ldap, kerberos, smb, nmap, password-cracking, adcs, shadow-credentials, esc16]
 media_subpath: /images/hackthebox_fluffy/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/ef8fc92ac7cccd8afa4412241432f064.png'

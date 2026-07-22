@@ -1,7 +1,7 @@
 ---
 title: TombWatcher
 categories: [HackTheBox]
-tags: [nmap, targetedkerberoasting, gmsa, adcs, certipy, bloodyad, evil-winrm, tombstone]
+tags: [nmap, targeted-kerberoasting, gmsa, adcs, certipy, bloodyad, evil-winrm, tombstone]
 media_subpath: /images/hackthebox_tombwatcher/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/59c74a969b4fec16cd8072d253ca9917.png'

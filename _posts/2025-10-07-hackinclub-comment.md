@@ -1,7 +1,7 @@
 ---
 title: Comment
 categories: [HackingClub]
-tags: [nmap, django, debug, hashcracking, portforward, iptables]
+tags: [nmap, django, debug, password-cracking, port-forwarding, iptables]
 media_subpath: /images/hackingclub_comment/
 image:
   path: 'https://hackingclub-statics.s3.amazonaws.com/machine/thumbnails/193513810468683222b210e0.47579027'

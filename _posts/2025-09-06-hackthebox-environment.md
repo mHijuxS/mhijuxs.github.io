@@ -1,7 +1,7 @@
 ---
 title: Environment
 categories: [HackTheBox]
-tags: [linux, cve, ENV_BASH, gpg, fileupload, laravel]
+tags: [linux, cve, env-bash, gpg, file-upload, laravel]
 media_subpath: /images/hackthebox_environment/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/757eeb9b0f530e71875f0219d0d477e4.png'

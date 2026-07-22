@@ -1,7 +1,7 @@
 ---
 title: Stick
 categories: [HackingClub]
-tags: [nmap, fileread, lxd]
+tags: [nmap, file-read, lxd]
 media_subpath: /images/hackingclub_stick/
 image:
   path: 'https://hackingclub-statics.s3.amazonaws.com/machine/thumbnails/1276272294685ed549eefa54.85368686'

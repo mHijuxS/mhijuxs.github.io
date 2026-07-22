@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Excalidraw renderer harness</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #ffffff; font-family: sans-serif; }
+    #status { position: fixed; top: 8px; left: 8px; color: #666; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div id="status">loading bundle…</div>
+  <script src="bundle.js"></script>
+  <script>
+    document.getElementById('status').textContent =
+      window.__excalidraw_ready__ ? 'ready' : 'failed to load bundle';
+  </script>
+</body>
+</html>

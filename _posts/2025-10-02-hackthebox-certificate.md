@@ -1,7 +1,7 @@
 ---
 title: Certificate
 categories: [HackTheBox]
-tags: [windows, adcs, kerberos, zip, php, mysql, passwordcracking]
+tags: [windows, adcs, kerberos, zip, php, mysql, password-cracking]
 media_subpath: /images/hackthebox_certificate/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/9b765f2f3e0b0c8d115b5455c22101cf.png'

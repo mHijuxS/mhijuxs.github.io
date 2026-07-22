@@ -1,7 +1,7 @@
 ---
 title: Willmore Group
 categories: [HacksmarterLabs]
-tags: [active-directory, email-header-injection, gitlab, otp, bruteforce, ntlmRelay, ghostSpn, kerberos, asreproasting, acl, sccm, Delegation, promptInjection, adcs, ESC8, NTLMReflection, goldenCertificate]
+tags: [active-directory, email-header-injection, gitlab, otp, bruteforce, ntlm-relay, ghost-spn, kerberos, asreproasting, acl-abuse, sccm, delegation, prompt-injection, adcs, esc8, ntlm-reflection, golden-certificate]
 media_subpath: /images/hacksmarter_willmoregroup/
 image:
   path: 'https://images.coursestack.com/HackSmarterLogo.png'
@@ -38,19 +38,6 @@ The second forest, `wmcapital.local`, has no trust with the first and starts fro
 Only **EXT (10.0.0.4)** is reachable at the start. Everything else requires pivoting, first through EXT into Subnet 2, then a second hop through the domain controller into Subnet 3.
 
 ![Network layout](network-diagram.png)
-
-## Table of Contents
-
-1. [EXT (10.0.0.4)](#ext-100004)
-2. [WK01 (10.0.4.5)](#wk01-10045)
-3. [NAS (10.0.4.9)](#nas-10049)
-4. [CAMS (10.0.4.7)](#cams-10047)
-5. [DC01 (10.0.4.4)](#dc01-10044)
-6. [WMC-FIN (10.0.5.21)](#wmc-fin-100521)
-7. [WMC-SQL (10.0.5.6)](#wmc-sql-1006)
-8. [WMC-CA (10.0.5.5)](#wmc-ca-1005)
-9. [WMC-DC (10.0.5.4)](#wmc-dc-1004)
-10. [Conclusion](#conclusion)
 
 ---
 

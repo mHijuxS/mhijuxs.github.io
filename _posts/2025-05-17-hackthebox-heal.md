@@ -2,7 +2,7 @@
 title: Heal
 categories:
   - HackTheBox
-tags: [linux, passwordcracking, lfi, cve]
+tags: [linux, password-cracking, lfi, cve]
 media_subpath: /images/hackthebox_heal/
 image:
   path: https://labs.hackthebox.com/storage/avatars/dcd5ef09ab764228c64385374ac744c1.png

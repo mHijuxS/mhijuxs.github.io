@@ -1,7 +1,7 @@
 ---
 title: NorthBridge
 categories: [HacksmarterLabs]
-tags: [active-directory, smb, rdp, acl-abuse, resource-based-constrained-delegation, rbcd, s4u2self, s4u2proxy, dpapi, backup-operators, secretsdump, machine-account, domain-compromise]
+tags: [active-directory, smb, rdp, acl-abuse, rbcd, s4u2self, s4u2proxy, dpapi, backup-operators, secretsdump, machine-account, domain-compromise]
 media_subpath: /images/hacksmarter_northbridge/
 image:
   path: 'https://images.coursestack.com/21f044de-588a-499f-9cbf-883fd16712c0/07c84940-76bb-4172-8862-acd8136d42bf'

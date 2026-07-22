@@ -1,7 +1,7 @@
 ---
 title: Titanic
 categories: [HackTheBox]
-tags: [cve,passwordcracking]
+tags: [cve, password-cracking]
 media_subpath: /images/hackthebox_titanic/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/eb5942ec56dd9b6feb06dcf8af8aefc6.png'

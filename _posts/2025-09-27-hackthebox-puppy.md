@@ -1,7 +1,7 @@
 ---
 title: Puppy
 categories: [HackTheBox]
-tags: [acl, windows, ldap, kerberos, smb, nmap, passwordcracking]
+tags: [acl-abuse, windows, ldap, kerberos, smb, nmap, password-cracking]
 media_subpath: /images/hackthebox_puppy/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/6a127b39657062e42c1a8dfdcd23475d.png'

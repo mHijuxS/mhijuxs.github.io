@@ -1,7 +1,7 @@
 ---
 title: El Bandito
 categories: [TryHackMe]
-tags: [ssrf, httpsmuggling]
+tags: [ssrf, http-smuggling]
 media_subpath: /images/tryhackme_elbandito/
 image:
   path: 'https://tryhackme-images.s3.amazonaws.com/room-icons/a183d2d10f868ab17143370c5834086e.svg'

@@ -1,7 +1,7 @@
 ---
 title: Dog
 categories: [HackTheBox]
-tags: [cve, codereview]
+tags: [cve, code-review]
 media_subpath: /images/hackthebox_dog/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/426830ea2ae4f05f7892ad89195f8276.png'

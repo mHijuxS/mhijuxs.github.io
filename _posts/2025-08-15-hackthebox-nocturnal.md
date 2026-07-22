@@ -1,7 +1,7 @@
 ---
 title: Nocturnal
 categories: [HackTheBox]
-tags: [cve,commandinjection,portforwarding]
+tags: [cve, command-injection, port-forwarding]
 media_subpath: /images/hackthebox_nocturnal/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/f6a56cec6e9826b4ed124fb4155abc66.png'

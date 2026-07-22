@@ -1,7 +1,7 @@
 ---
 title: Infiltrator
 categories: [HackTheBox]
-tags: [windows, kerberos, ldap, smb, passwordcracking, asreproasting, portforwarding, reversing, adcs]
+tags: [windows, kerberos, ldap, smb, password-cracking, asreproasting, port-forwarding, reversing, adcs]
 media_subpath: /images/hackthebox_infiltrator/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/dc36c40fe951cf7f32a84f3da1b43ce8.png'

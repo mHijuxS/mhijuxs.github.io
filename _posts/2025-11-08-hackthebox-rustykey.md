@@ -1,7 +1,7 @@
 ---
 title: RustyKey
 categories: [HackTheBox]
-tags: [active-directory, ldap, kerberos, timeroasting, acl-abuse, group-membership, registry-hijacking, shell-extension-hijacking, constrained-delegation, resource-based-constrained-delegation, s4u2self, s4u2proxy]
+tags: [active-directory, ldap, kerberos, timeroasting, acl-abuse, group-membership, registry-hijacking, shell-extension-hijacking, constrained-delegation, rbcd, s4u2self, s4u2proxy]
 media_subpath: /images/hackthebox_rustykey/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/c458b48070ca6f3073128d085c9ee247.png'

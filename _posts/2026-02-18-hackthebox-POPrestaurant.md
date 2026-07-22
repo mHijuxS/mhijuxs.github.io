@@ -1,7 +1,7 @@
 ---
 title: POP Restaurant
 categories: [HackTheBox]
-tags: [web, deserialization, php, pop chain, code review]
+tags: [web, deserialization, php, pop-chain, code-review]
 media_subpath: /images/hackthebox_poprestaurant/
 ---
 

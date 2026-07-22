@@ -2,7 +2,7 @@
 title: Backfire
 categories:
   - HackTheBox
-tags: [cve, c2, portforward]
+tags: [cve, c2, port-forwarding]
 media_subpath: /images/hackthebox_backfire/
 image:
   path: https://labs.hackthebox.com/storage/avatars/aa0a93908243c51fe21e691fc6571911.png

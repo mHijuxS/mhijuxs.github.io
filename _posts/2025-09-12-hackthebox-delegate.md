@@ -1,7 +1,7 @@
 ---
 title: Delegate
 categories: [HackTheBox]
-tags: [printerbug,petitpotam,windows, ldap, kerberos, krbrelayx, smb, passwordcracking, acl, delegation]
+tags: [printerbug, petitpotam, windows, ldap, kerberos, krbrelayx, smb, password-cracking, acl-abuse, delegation]
 media_subpath: /images/hackthebox_delegate/
 image:
   path: 'https://htb-mp-prod-public-storage.s3.eu-central-1.amazonaws.com/avatars/b134ff1405addccb96e50fb35d315dc9.png'

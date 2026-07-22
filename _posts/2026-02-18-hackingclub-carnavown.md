@@ -1,7 +1,7 @@
 ---
 title: CarnaVown
 categories: [HackingClub]
-tags: [web, pwn, mobile, reversing, crypto, idor, bufferoverflow, nosql, json, smuggling, adcs, ransomware]
+tags: [web, pwn, mobile, reversing, crypto, idor, buffer-overflow, nosql, json, http-smuggling, adcs, ransomware]
 media_subpath: /images/hackingclub_carnavown/
 image:
   path: 'https://app.hackingclub.com/media/hc/carnavown.png'

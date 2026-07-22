@@ -1,7 +1,7 @@
 ---
 title: Planning
 categories: [HackTheBox]
-tags: [cve,cron,portforward]
+tags: [cve, cron, port-forwarding]
 media_subpath: /images/hackthebox_planning/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/c9efb253e7d1d9b407113e11afdaa905.png'

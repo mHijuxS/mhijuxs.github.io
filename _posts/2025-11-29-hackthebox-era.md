@@ -1,7 +1,7 @@
 ---
 title: Era
 categories: [HackTheBox]
-tags: [web, php, idor, passwordcracking, php-wrappers, ssh2, rce, objcopy]
+tags: [web, php, idor, password-cracking, php-wrappers, ssh2, rce, objcopy]
 media_subpath: /images/hackthebox_era/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/fcd00b2542a936e4281ba19e0bd0b025.png'
