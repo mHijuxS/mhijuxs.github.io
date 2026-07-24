@@ -4,7 +4,7 @@ categories: [HacksmarterLabs]
 tags: [active-directory, ldap, kerberos, nfs, timeroasting, machine-account, password-cracking, sysvol, gpp, password-spraying, browser-credentials, bloodhound, bloodyad, acl-abuse, useraccountcontrol, asreproasting, gmsa, logonhours, account-operators, protected-users, seimpersonateprivilege, domain-compromise]
 media_subpath: /images/hacksmarter_fragments/
 image:
-  path: 'https://images.coursestack.com/HackSmarterLogo.png'
+  path: 'https://images.coursestack.com/de954aaa-46d0-499e-be68-6ee2eddfbc94/861d017a-c927-4da7-9519-6e6c640dc4ea?w=600'
 ---
 
 ## Summary
