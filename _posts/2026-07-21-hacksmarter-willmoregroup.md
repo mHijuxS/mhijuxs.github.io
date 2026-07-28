@@ -15,7 +15,7 @@ From there, `willmore.local` falls to a chain of "individually worthless" primit
 
 The second forest, `wmcapital.local`, has no trust with the first and starts from zero: an unauthenticated LLM chatbot that writes its own SQL gets prompt-injected into coercing an NTLM authentication out of its own service account, that authentication is relayed into a raw MSSQL session, `xp_dirtree` reads a deployment script off disk in cleartext, local-admin hash reuse walks across the subnet, and a 2025-era NTLM reflection technique (CVE-2025-33073) tricks a Certificate Authority into enrolling a certificate for its own machine account, which becomes local admin via S4U2self. The payoff is a Golden Certificate forged from the CA's own exported private key, giving offline, undetectable Domain Admin.
 
-> **Author:** pebble. **Difficulty:** Hard (multi-host AD-style range). **Scope:** external penetration test against a single in-scope host, `10.0.0.4`. Social engineering and DoS are out of scope; internal pivoting is authorised after foothold to demonstrate impact.
+> **Author:** pebble. **Difficulty:** Insane (multi-host AD-style range). **Scope:** external penetration test against a single in-scope host, `10.0.0.4`. Social engineering and DoS are out of scope; internal pivoting is authorised after foothold to demonstrate impact.
 >
 > **Lab notes from the platform:** wait 3-5 minutes after deploy for services to finish booting, use the provided `passwords.txt` for hash cracking, and keep Subnet 3 powered off until DC01's flag is captured to save lab credits.
 {: .prompt-info}
