@@ -4,7 +4,7 @@ categories: [HacksmarterLabs]
 tags: [active-directory, nmap, subdomain-enumeration, sql-injection, file-upload, password-cracking, ldap, bloodhound, acl-abuse, forcechangepassword, bloodyad, mssql, logonhours, deleted-object-restoration, adcs, esc7, esc3, certipy, cve, dcsync, silver-ticket, seimpersonateprivilege, machine-account, domain-compromise]
 media_subpath: /images/hacksmarter_shadowgate2/
 image:
-  path: 'https://images.coursestack.com/HackSmarterLogo.png'
+  path: 'https://images.coursestack.com/6f9f20a1-0381-4e65-8456-6a278f5b2918/7a75437f-6464-41bd-a15a-444f2baf462e'
 ---
 
 ## Summary
