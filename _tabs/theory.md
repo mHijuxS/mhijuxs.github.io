@@ -27,6 +27,8 @@ permalink: /theory/
 - [SMB](/theory/protocols/smb)
 
 ## Windows
+- [Logon Types and Privileges](/theory/windows/logon-and-privileges)
+
 ### Active Directory
 - [ACLs](/theory/windows/AD/acl)
 - [ADCS](/theory/windows/AD/adcs)

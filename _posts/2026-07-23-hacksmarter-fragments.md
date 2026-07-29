@@ -1026,7 +1026,7 @@ There it is. `SeImpersonatePrivilege` is enabled, courtesy of `IIS_IUSRS`.
 
 ### Why this is game over
 
-`SeImpersonatePrivilege` allows a process to assume the security context of any client that connects to it and authenticates. It exists so that service processes (web servers, SQL, RPC endpoints) can act on behalf of the users calling them.
+`SeImpersonatePrivilege` allows a process to assume the security context of any client that connects to it and authenticates. It exists so that service processes (web servers, SQL, RPC endpoints) can act on behalf of the users calling them. See [Windows Logon Types and Privileges](/theory/windows/logon-and-privileges/) for the token model behind this and a comparison of the potato variants.
 
 The entire "potato" family of exploits abuses that in the same way:
 
