@@ -4,7 +4,7 @@ categories: [HacksmarterLabs]
 tags: [linux, nmap, ftp, snmp, snmpv3, bruteforce, credential-reuse, information-disclosure, sudo, cve, privilege-escalation]
 media_subpath: /images/hacksmarter_sysadmins/
 image:
-  path: 'https://images.coursestack.com/HackSmarterLogo.png'
+  path: 'https://images.coursestack.com/050ba47e-b38f-4638-8dad-1cc54b987a5d/327cebf1-ce75-4bb7-b716-e4bda916fa61?w=600'
 ---
 
 ## Summary
