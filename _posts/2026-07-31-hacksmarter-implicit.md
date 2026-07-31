@@ -4,7 +4,7 @@ categories: [HacksmarterLabs]
 tags: [web, nmap, oauth, sso, implicit-flow, access-token, account-takeover, code-review, gitea, ci-cd, flask, docker, linux]
 media_subpath: /images/hacksmarter_implicit/
 image:
-  path: 'https://images.coursestack.com/HackSmarterLogo.png'
+  path: 'https://images.coursestack.com/37e66768-0973-4a1b-9ae6-ba74ac8af201/be1eb9bb-9299-44db-b969-d64abebfc7ef?w=600'
 ---
 
 ## Summary
