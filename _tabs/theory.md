@@ -33,4 +33,5 @@ permalink: /theory/
 - [ACLs](/theory/windows/AD/acl)
 - [ADCS](/theory/windows/AD/adcs)
 - [Delegation](/theory/windows/delegation)
+- [NTLM & Kerberos Relay](/theory/windows/AD/relay)
 - [Shadow Credentials](/theory/windows/AD/shadow-credentials)

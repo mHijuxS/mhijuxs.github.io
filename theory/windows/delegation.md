@@ -33,8 +33,10 @@ There are three main types of Kerberos delegation:
 ### Constrained Delegation (KCD)
 - **Description:** Limits delegation to specific services only
 - **Risk Level:** Medium-High - Limited but still dangerous
-- **Configuration:** `TRUSTED_TO_AUTH_FOR_DELEGATION` flag with specific SPNs
-- **Attack Vector:** Abuse S4U2Self and S4U2Proxy extensions
+- **Configuration:** two flavours share the same `msDS-AllowedToDelegateTo` attribute (a list of allowed SPNs):
+    - **Vanilla KCD:** `msDS-AllowedToDelegateTo` set, `TRUSTED_TO_AUTH_FOR_DELEGATION` **not** set. The service can only delegate for users who *already* presented a forwardable TGT to it.
+    - **KCD with Protocol Transition (KCD/PT):** `msDS-AllowedToDelegateTo` set **and** `TRUSTED_TO_AUTH_FOR_DELEGATION` set. The service can request a forwardable ticket for *any* user via S4U2Self, without them ever authenticating to it first. This is the attacker-friendly variant.
+- **Attack Vector:** Abuse S4U2Self and S4U2Proxy extensions, plus **AnySPN / sname rewriting** (see below) and **`WriteSPN` SPN-jacking** to break out of the `msDS-AllowedToDelegateTo` allowlist.
 
 ### Resource-Based Constrained Delegation (RBCD)
 - **Description:** The target service controls who can delegate to it
@@ -182,18 +184,34 @@ This is configured by setting the `TRUSTED_TO_AUTH_FOR_DELEGATION` flag in the `
 ### How Constrained Delegation Works
 
 #### S4U2Self (Service for User to Self)
-1. A service requests a ticket for a user to itself
-2. The KDC issues a forwardable ticket if the service has delegation rights
-3. This ticket can be used for S4U2Proxy requests
+
+1. A service requests a ticket for an arbitrary user (usually `Administrator`) *to itself*.
+2. The KDC issues that ticket unconditionally (S4U2Self always succeeds), **but the ticket is forwardable only if the service account has `TRUSTED_TO_AUTH_FOR_DELEGATION` set on its `userAccountControl`.**
+3. That forwardable bit is the whole point: only a forwardable S4U2Self ticket can be fed into S4U2Proxy. A non-forwardable ticket is useful for local access checks but is a dead end for delegation.
+
+**Consequence:** on paper a KCD attack "requires" the impersonated user's cooperation. In practice, the `TRUSTED_TO_AUTH_FOR_DELEGATION` flag ("protocol transition", see below) *removes* that requirement, and every real-world KCD abuse assumes the service has it. Without the flag you are looking at a much narrower "wait for a real forwardable TGT to arrive" scenario.
 
 #### S4U2Proxy (Service for User to Proxy)
-1. A service uses a forwardable ticket from S4U2Self
-2. Requests a ticket on behalf of the user to another service
-3. The target service receives a ticket showing the original user's identity
 
-#### Protocol Transition
-- **With Protocol Transition:** Service can request tickets for any user
-- **Without Protocol Transition:** Service can only request tickets for users who have already authenticated to it
+1. A service presents a forwardable ticket (obtained via S4U2Self or a real user's forwarded TGT).
+2. It asks the KDC for a service ticket to a target SPN, *on behalf of* the ticket's `cname`.
+3. The KDC checks the requester's `msDS-AllowedToDelegateTo` list: if the target SPN is not on the list, the request is refused.
+4. If accepted, the KDC issues a service ticket where:
+    - the `cname` is the impersonated user,
+    - the ticket is **encrypted with the long-term key of whichever account currently registers the target SPN**.
+5. The requester now holds a valid ticket that authenticates to the target service as the impersonated user.
+
+**Two invariants that the attacker abuses in AnySPN and SPN-jacking (below):**
+
+- The KDC picks the encryption key by SPN owner, not by SPN string. Any two SPNs registered on the same account produce mutually-swappable tickets.
+- The `sname` field on the ticket is not integrity-protected against the client; only the ticket body (cname, session key, PAC) is signed. The client can rewrite `sname` between receiving the ticket and presenting it.
+
+#### Protocol Transition (`TRUSTED_TO_AUTH_FOR_DELEGATION`)
+
+- **With Protocol Transition (`TRUSTED_TO_AUTH_FOR_DELEGATION` = true):** S4U2Self returns a **forwardable** ticket for any user. The service can therefore always feed S4U2Proxy and effectively impersonate any user to the SPNs in its allowlist. This is the attacker-friendly configuration.
+- **Without Protocol Transition (`TRUSTED_TO_AUTH_FOR_DELEGATION` = false):** S4U2Self still succeeds, but the returned ticket is **non-forwardable**. S4U2Proxy will refuse it. The service can only delegate a client's forwardable TGT that it already received during a real authentication (typically Negotiate → Kerberos over HTTP or RPC).
+
+Colloquially "protocol transition" means "the service can bridge from non-Kerberos auth (or no auth at all) to a Kerberos service ticket for the user". Technically it just means "S4U2Self returns forwardable tickets".
 
 ### Constrained Delegation Attack Vectors
 
@@ -239,14 +257,23 @@ getST.py -spn "cifs/target.domain.local" -impersonate "Administrator" "domain/se
 #### Step 3: Without Protocol Transition (RBCD Approach)
 
 ```bash
-# Step 1: Configure RBCD on the target service
+# Step 1: Configure RBCD on the target service. Any account that ends up in
+#         target$'s msDS-AllowedToActOnBehalfOfOtherIdentity is treated as if
+#         it had TRUSTED_TO_AUTH_FOR_DELEGATION w.r.t. target$.
 bloodyAD --host 10.10.10.10 -u user -p password -d domain add rbcd -t target$ -f evil$
 
-# Step 2: Perform S4U2Self + S4U2Proxy
-getST.py -spn "cifs/target.domain.local" -impersonate "Administrator" "domain/evil$:password"
+# Step 2: One-shot S4U2Self + S4U2Proxy as evil$. getST.py chains both calls
+#         internally when the requester is in target$'s RBCD list, and drops the
+#         final "Administrator to cifs/target.domain.local" ticket to disk.
+getST.py -spn "cifs/target.domain.local" \
+         -impersonate "Administrator" \
+         "domain/evil\$:password"
 
-# Step 3: Use the ticket for S4U2Proxy
-getST.py -spn "cifs/final-target.domain.local" -impersonate "Administrator" -additional-ticket "Administrator.ccache" "domain/target$:password"
+# Step 3: (optional) -additional-ticket <ccache> only comes into play for
+#         chained delegation across two services. The ccache passed here MUST
+#         be a prior S4U2Self result (a forwardable ticket to itself), not an
+#         arbitrary service ticket. Typical use: pass an S4U2Self ticket for
+#         one service and let getST re-issue an S4U2Proxy to a second SPN.
 ```
 
 ### Constrained Delegation Detection
@@ -278,14 +305,46 @@ MATCH (c:Computer)-[r:AllowedToDelegate]->(t:Computer) RETURN c, r, t
 ### Constrained Delegation Attack Variations
 
 #### Bronze Bit Attack (CVE-2020-17049)
-- Exploits a vulnerability in Kerberos delegation
-- Allows bypassing delegation restrictions
-- Patched in Windows updates
 
-#### AnySPN Attack
-- Modifies the service class of service tickets
-- Can be used to access different services
-- Works with pass-the-ticket attacks
+- Exploits an S4U2Proxy check that let a service turn a *non-forwardable* S4U2Self ticket into a forwardable service ticket by flipping the `forwardable` bit and re-signing.
+- Effectively removes the "requires `TRUSTED_TO_AUTH_FOR_DELEGATION`" precondition for KCD abuse.
+- Patched in Windows updates in late 2020. Impacket's `getST.py -force-forwardable` invokes the pre-patch behaviour and is only interesting on unpatched hosts.
+
+#### AnySPN / sname rewriting (`-altservice`)
+
+This is not a bug, it is how Kerberos is designed. A service ticket is encrypted with the **long-term key of the account that owns the target SPN**. The `sname` field (`<serviceclass>/<host>`) inside the ticket tells the target service which service it is, but that field is signed by the KDC only, not integrity-protected against the client. Once the client holds a ticket, it can rewrite `sname` to any other SPN owned by the same account and the target will accept it, because decryption still succeeds with the same key.
+
+**Practical consequence:** if you obtain a KCD service ticket for `HTTP/target.domain.local`, you can freely swap `sname` to `cifs/target.domain.local`, `LDAP/target.domain.local`, `HOST/target.domain.local`, etc. `msDS-AllowedToDelegateTo` bounds *which SPN string the KDC will accept in the request*; it does not bound *which service class the ticket ultimately unlocks*.
+
+Impacket exposes this with the `-altservice` flag on `getST.py`:
+
+```bash
+# Original request: HTTP/target (in the allowed-to-delegate list)
+# Rewritten to: cifs/target (was not in the list, but same key)
+getST.py -spn 'HTTP/target.domain.local' \
+         -impersonate 'Administrator' \
+         -altservice 'cifs/target.domain.local' \
+         domain/service:password
+```
+
+Two operational quirks:
+
+- **Always use the FQDN form of the SPN** (`cifs/target.domain.local`, not `cifs/target`). Some clients (netexec/nxc's SMB module in particular) always canonicalise short forms to the full FQDN before sending the AP-REQ, and a mismatch produces `KDC_ERR_PREAUTH_FAILED` on the target. Impacket's own `smbclient.py` accepts the short form; nxc does not.
+- **Case matters in some Windows builds.** `CIFS/host` and `cifs/host` should be equivalent, but Windows service-class matching has historically been case-insensitive in the KDC and case-sensitive in some client-side lookups. Lowercase everywhere unless a working example says otherwise.
+
+#### `WriteSPN` SPN-jacking
+
+`WriteSPN` (`WriteProperty` on `servicePrincipalName`) on a *computer object* is enough to steal the "AnySPN" invariant for a service class the KDC would not otherwise let you request. The pattern:
+
+1. The attacker controls an account with KCD/PT (say, `svc_it_admin` in the Nova Forge writeup) whose `msDS-AllowedToDelegateTo` lists an SPN like `CIFS/STORAGE.novaforge.local`.
+2. That SPN is *not currently registered* on `STORAGE$`, so `getST.py` for it would fail with `KDC_ERR_S_PRINCIPAL_UNKNOWN`.
+3. The attacker also has `WriteSPN` on some *other* computer object, typically the DC. They register the exact same SPN string on the DC: `bloodyAD msldap addspn CN=DC,... CIFS/STORAGE.novaforge.local`.
+4. Now `getST.py -spn CIFS/STORAGE.novaforge.local` succeeds, but the returned ticket is encrypted with **`DC$`'s key**, because `DC$` is the account currently owning that SPN.
+5. The attacker rewrites `sname` to a real service on `DC` via `-altservice 'cifs/DC.novaforge.local'` and lands on the DC as the impersonated user.
+
+**Why it works:** the KDC ties the encryption key to the SPN owner (step 4), while `msDS-AllowedToDelegateTo` only checks the SPN *string* (step 3). Registering the string on any writeable computer object bridges the two.
+
+**Why `WriteSPN` matters as much as `GenericAll` on the target:** it looks narrow ("only add/remove SPNs on this object") but composes with any existing KCD/PT configuration into a full DC compromise. Audit `WriteSPN` on Tier-0 computer objects with the same rigour as `GenericAll`.
 
 ---
 
@@ -455,10 +514,24 @@ Monitor for:
 - Regularly audit delegation configurations
 
 #### 2. Protected Users Group
+
+`Protected Users` membership sets several restrictions on the *member* account:
+
+- The account cannot be delegated to. The KDC refuses S4U2Self and S4U2Proxy requests that try to impersonate a Protected Users member (equivalent to setting `AccountNotDelegated` on the account).
+- The account's Kerberos tickets are non-forwardable and non-proxiable by policy.
+- NTLM auth is disabled for the account, forcing Kerberos everywhere.
+- Long-term Kerberos keys are limited to AES; DES and RC4-HMAC are disabled.
+- TGT lifetime is capped at 4 hours (no renewal).
+
 ```powershell
 # Add sensitive accounts to Protected Users group
 Add-ADGroupMember -Identity "Protected Users" -Members "Administrator", "Domain Admins"
 ```
+
+Two things worth calling out:
+
+- **PU protects the member from being impersonated, not from impersonating.** A service account in `Protected Users` that also has `TRUSTED_TO_AUTH_FOR_DELEGATION` can still perform S4U2Self and S4U2Proxy to impersonate other users. PU only blocks S4U2Self / S4U2Proxy calls that target a PU member as the *impersonated user*.
+- **PU membership propagates lazily.** The account must acquire a new TGT after being added to the group before the restrictions take effect on its outbound requests. Blue teams that add an account to PU and then observe "PU restrictions aren't kicking in" are usually looking at a ticket issued before the group change.
 
 #### 3. Regular Auditing
 ```powershell
@@ -521,6 +594,6 @@ if ($delegation) {
 - [Crowsec - Kerberos Delegation Attacks](https://blog.crowsec.com.br/kerberos-delegation-attacks/)
 - [IRED Team - Kerberos Abuse](https://www.ired.team/offensive-security-experiments/active-directory-kerberos-abuse/abusing-kerberos-constrained-delegation)
 - [ADSecurity - Kerberos Delegation](https://adsecurity.org/?p=1667)
-- [Medium - Constrained Delegation](https://medium.com/@harikrishnanp006/constrained-delegation-6aff5d1b9d16)
+- [Decoder.cloud - Reflecting your authentication (CVE-2025-33073 CMTI)](https://decoder.cloud/2025/11/24/reflecting-your-authentication-when-windows-ends-up-talking-to-itself/)
 
 ---

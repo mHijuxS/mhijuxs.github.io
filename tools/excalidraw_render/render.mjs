@@ -120,9 +120,13 @@ const result = await page.evaluate(
       exportBackground: true,
       exportWithDarkMode: !!dark,
       exportScale: scale,
-      viewBackgroundColor: dark
-        ? baseAppState.viewBackgroundColor || "#121212"
-        : "#ffffff",
+      // Respect the scene's viewBackgroundColor if the author set one;
+      // fall back to a mode-appropriate default when it's missing or is the
+      // stock white "#ffffff".
+      viewBackgroundColor:
+        (baseAppState.viewBackgroundColor && baseAppState.viewBackgroundColor.toLowerCase() !== "#ffffff")
+          ? baseAppState.viewBackgroundColor
+          : (dark ? "#121212" : "#ffffff"),
       // hide grid in export
       gridSize: null,
     };
