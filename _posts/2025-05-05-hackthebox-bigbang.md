@@ -8,7 +8,7 @@ image:
 ---
 
 ## Summary
-**BigBang** is a Hard-rated box that required some creative exploitation to gain a foothold. The target hosted a [WordPress](/theory/misc/wordpress) site with a vulnerable plugin that allowed unauthenticated arbitrary file read through crafted [`php://filter chains`](/theory/misc/php#php-filter-chain). Leveraging this, we exploited CVE-2024-2961, a vulnerability in iconv, to escalate the file read into remote code execution (RCE).
+**BigBang** is a Hard-rated box that required some creative exploitation to gain a foothold. The target hosted a WordPress site with a vulnerable plugin that allowed unauthenticated arbitrary file read through crafted [`php://filter chains`](/theory/misc/php#php-filter-chain). Leveraging this, we exploited CVE-2024-2961, a vulnerability in iconv, to escalate the file read into remote code execution (RCE).
 
 With initial access, we discovered another host on the internal network. By setting up [port forwarding](/theory/misc/portforward#chisel-local-port-forwarding), we were able to enumerate a `MySQL` database running on that host and identify a user with weak credentials, cracked it with `hashcat`. These credentials led us to a user that could access the box with `ssh`, where a `grafana.db` file was found, which exposed another weak password and allowed lateral movement to the `developer` user.
 

@@ -31,6 +31,9 @@ Kerberos uses tickets to authenticate users and services. A ticket is a time-lim
 
 ## Kerberos Authentication Process
 
+![The three Kerberos exchanges between client, KDC and resource server](file-20250424214228502.png)
+_The three exchanges. Step 1 (AS-REQ / AS-REP) obtains a TGT, step 2 (TGS-REQ / TGS-REP) exchanges that TGT for a service ticket, step 3 (AP-REQ / AP-REP) presents the service ticket to the resource. Note that the diagram's "with NTLM pass" is shorthand: the client does not send the password or its hash, it encrypts a timestamp with a key derived from the password. With RC4-HMAC that key is the NT hash itself, which is what makes pass-the-hash work against Kerberos; with AES etypes the key is derived from the password and the realm salt instead._
+
 The Kerberos authentication process involves several steps:
 
 1. **Client Authentication Request**: The client sends a request to the KDC's Authentication Service (AS) for a Ticket Granting Ticket (TGT). This request includes the client's principal name and a timestamp. 
@@ -66,7 +69,7 @@ The AS-REP roast attack is a method used to extract the password hash of a user 
 - The attacker must have access to the network where the KDC is located.
 - The attacker must be able to send AS-REQ requests to the KDC.
 - The attacker must be able to capture the AS-REP response from the KDC.
-- **🚨 The target account must have pre-authentication disabled.**
+- **The target account must have pre-authentication disabled.**
 
 **Enumeration From Linux:**
 
@@ -115,7 +118,7 @@ We can use the `Rubeus` tool to request the TGT for the user with pre-authentica
 Rubeus.exe asreproast 
 ```
 
-## 📚 References
+## References
 
 - [Microsoft](https://learn.microsoft.com/en-us/windows-server/security/kerberos/)
 - [Optiv](https://www.optiv.com/insights/source-zero/blog/kerberos-domains-achilles-heel)

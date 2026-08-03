@@ -70,22 +70,22 @@ This would execute the code in `malicious.php` on the vulnerable server.
 | **Function**                 | **Read Content** | **Execute** | **Remote URL** |
 | ---------------------------- | :--------------: | :---------: | :------------: |
 | **PHP**                      |                  |             |                |
-| `include()`/`include_once()` |        ✅         |      ✅      |       ✅        |
-| `require()`/`require_once()` |        ✅         |      ✅      |       ❌        |
-| `file_get_contents()`        |        ✅         |      ❌      |       ✅        |
-| `fopen()`/`file()`           |        ✅         |      ❌      |       ❌        |
+| `include()`/`include_once()` |       Yes        |     Yes     |      Yes       |
+| `require()`/`require_once()` |       Yes        |     Yes     |       No       |
+| `file_get_contents()`        |       Yes        |     No      |      Yes       |
+| `fopen()`/`file()`           |       Yes        |     No      |       No       |
 | **NodeJS**                   |                  |             |                |
-| `fs.readFile()`              |        ✅         |      ❌      |       ❌        |
-| `fs.sendFile()`              |        ✅         |      ❌      |       ❌        |
-| `res.render()`               |        ✅         |      ✅      |       ❌        |
+| `fs.readFile()`              |       Yes        |     No      |       No       |
+| `fs.sendFile()`              |       Yes        |     No      |       No       |
+| `res.render()`               |       Yes        |     Yes     |       No       |
 | **Java**                     |                  |             |                |
-| `include`                    |        ✅         |      ❌      |       ❌        |
-| `import`                     |        ✅         |      ✅      |       ✅        |
+| `include`                    |       Yes        |     No      |       No       |
+| `import`                     |       Yes        |     Yes     |      Yes       |
 | **.NET**                     |                  |             |                |
-| `@Html.Partial()`            |        ✅         |      ❌      |       ❌        |
-| `@Html.RemotePartial()`      |        ✅         |      ❌      |       ✅        |
-| `Response.WriteFile()`       |        ✅         |      ❌      |       ❌        |
-| `include`                    |        ✅         |      ✅      |       ✅        |
+| `@Html.Partial()`            |       Yes        |     No      |       No       |
+| `@Html.RemotePartial()`      |       Yes        |     No      |      Yes       |
+| `Response.WriteFile()`       |       Yes        |     No      |       No       |
+| `include`                    |       Yes        |     Yes     |      Yes       |
 
 ## References
 - [OWASP File Inclusion](https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/07-Input_Validation_Testing/11.1-Testing_for_Local_File_Inclusion)

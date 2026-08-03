@@ -15,7 +15,6 @@ permalink: /theory/
 - [Request Smuggling](/theory/misc/request-smuggling)
 - [SQL Injection](/theory/misc/sql)
 - [SSRF](/theory/misc/ssrf)
-- [Wordpress](/theory/misc/wordpress)
 
 ## Mobile
 - [Android APK](/theory/mobile/apk)

@@ -101,7 +101,7 @@ ldapsearch -LLL -H ldap://ldap.server -D "" -b "OU=Service Accounts,DC=FOREST,DC
 ### Anonymous Bind
 LDAP servers can be configured to allow anonymous binds, which means that users can connect to the server without providing any credentials. This can be useful for public directories, but it can also pose a security risk, allowing any user to enumerate the directory and access sensitive information. 
 
-## 📚 References
+## References
 
 - [LDAP](https://ldap.com)
 - [Okta](https://www.okta.com/identity-101/what-is-ldap/)

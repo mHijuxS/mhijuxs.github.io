@@ -8,7 +8,7 @@ permalink: /theory/protocols/smb/
 
 SMB is used for file and printer sharing in Windows.
 
-## 🛠️ Tools
+## Tools
 
 - `smbclient`, `enum4linux`, `crackmapexec`
 
@@ -16,6 +16,6 @@ SMB is used for file and printer sharing in Windows.
 smbclient //ip/share -N
 ```
 
-## 📚 References
+## References
 
 - https://wiki.samba.org/index.php/SMB_protocol
