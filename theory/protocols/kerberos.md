@@ -118,6 +118,47 @@ We can use the `Rubeus` tool to request the TGT for the user with pre-authentica
 Rubeus.exe asreproast 
 ```
 
+### Enterprise Principal Names and UPN Spoofing
+
+Every Kerberos principal name carries a **name type**, and the type tells the KDC how to resolve the string it is given.
+
+| Name type | The name is | The KDC resolves it by |
+|---|---|---|
+| `NT_PRINCIPAL` | a `sAMAccountName` | looking up the account name |
+| `NT_ENTERPRISE` | a UPN | searching for an account whose `userPrincipalName` matches exactly |
+| `NT_SRV_INST` / `NT_SRV_HST` | a service principal name | looking up the registered SPN |
+
+`NT_ENTERPRISE` exists so that a user can log in with `firstname.lastname@company.com` even when their `sAMAccountName` is something else entirely. The KDC performs an exact-match search on `userPrincipalName`, verifies the found account's key against the pre-authentication data, and issues a TGT whose client name is the enterprise name that was requested.
+
+**The abuse:** `userPrincipalName` is a normal writable attribute. AD requires it to be unique in the forest but does not require it to contain an `@domain` suffix, and does not require it to relate to the account it sits on. So a principal with `WriteProperty` on `userPrincipalName` (or `GenericWrite` / `GenericAll`, which include it) over an account it already controls can write **another user's name** into that attribute and then request a ticket under it.
+
+The password that gets verified belongs to the controlled account. The name in the resulting ticket belongs to somebody else.
+
+```bash
+# 1. write the victim's bare name into a controlled account's UPN
+bloodyAD -u 'attacker' -p 'Passw0rd!' -d '<DOMAIN>' --host '<DC>' \
+    set object controlled_user userPrincipalName -v 'victim'
+
+# 2. ask for a TGT for the enterprise principal 'victim',
+#    authenticating with the controlled account's own password or hash
+getTGT.py <DOMAIN>/victim:'ControlledPassword' -principalType NT_ENTERPRISE
+```
+
+Writing the **bare** name (`victim`, not `victim@domain.tld`) matters: the real account normally holds `victim@domain.tld`, so the bare string does not collide and the write is accepted.
+
+**Where it pays off.** The PAC inside the resulting ticket still describes the controlled account, so anything that authorises on the SID list is unaffected. The attack lands against services that authorise on the **principal name string**, which is most of the Unix side of a mixed environment:
+
+- `sshd` with `GSSAPIAuthentication yes` checks whether the client principal is allowed to become the requested local user, which is a name comparison.
+- SSSD, NFSv4, and anything else that maps a Kerberos principal to a POSIX identity by name.
+
+```bash
+export KRB5CCNAME=victim.ccache
+ssh -o GSSAPIAuthentication=yes -o GSSAPIDelegateCredentials=yes victim@host.<DOMAIN>
+```
+
+> `userPrincipalName` looks like a cosmetic attribute in an access review, and `GenericWrite` over an unprivileged user looks like a low-severity finding. Together they are an authentication bypass against every Kerberos consumer that trusts the name in a ticket. Alert on `userPrincipalName` modifications the same way you alert on password resets.
+{: .prompt-danger}
+
 ## References
 
 - [Microsoft](https://learn.microsoft.com/en-us/windows-server/security/kerberos/)
