@@ -8,6 +8,7 @@ permalink: /theory/
 ## Misc
 - [AWS](/theory/misc/aws)
 - [Command Injection](/theory/misc/cmi)
+- [Docker](/theory/misc/docker)
 - [File Inclusion](/theory/misc/file-inclusion)
 - [PHP](/theory/misc/php)
 - [PHAR Deserialization](/theory/misc/phar-deserialization)
@@ -15,6 +16,7 @@ permalink: /theory/
 - [Request Smuggling](/theory/misc/request-smuggling)
 - [SQL Injection](/theory/misc/sql)
 - [SSRF](/theory/misc/ssrf)
+- [WordPress](/theory/misc/wordpress)
 
 ## Mobile
 - [Android APK](/theory/mobile/apk)
