@@ -1,7 +1,7 @@
 ---
 title: Investment House
 categories: [HackingClub]
-tags: [nmap, deserialization, phar, sql-injection, suid, ghidra, reversing]
+tags: [deserialization, phar, sql-injection, suid, ghidra, reversing]
 media_subpath: /images/hackingclub_investmenthouse/
 image:
   path: 'https://hackingclub-statics.s3.amazonaws.com/machine/thumbnails/2740796026855c4a89c9ce8.88502426'

@@ -1,7 +1,7 @@
 ---
 title: Vizion
 categories: [HackingClub]
-tags: [nmap, web, subdomain-enumeration, gitlab, unicode-normalization, account-takeover, php-fpm, rce, pdf-attachment, ssh-key]
+tags: [web, subdomain-enumeration, gitlab, unicode-normalization, account-takeover, php-fpm, rce, pdf-attachment, ssh-key]
 media_subpath: /images/hackingclub_vizion/
 image:
   path: 'https://hackingclub-statics.s3.amazonaws.com/machine/thumbnails/130347850688cee3daa0e01.27828880'
