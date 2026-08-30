@@ -1,7 +1,7 @@
 ---
 title: Sorcery
 categories: [HackTheBox]
-tags: [nmap, rust, cypher-injection, neo4j, xss, webauthn, passkey, kafka, dns-rce, ligolo, ftp, mitmproxy, docker, ipa, ldap, linux]
+tags: [rust, cypher-injection, neo4j, xss, webauthn, passkey, kafka, dns-rce, ligolo, ftp, mitmproxy, docker, ipa, ldap, linux]
 media_subpath: /images/hackthebox_sorcery/
 image:
   path: 'https://htb-mp-prod-public-storage.s3.eu-central-1.amazonaws.com/avatars/531d99642e57872a77dc86168ac64238.png'

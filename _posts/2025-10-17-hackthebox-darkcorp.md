@@ -1,7 +1,7 @@
 ---
 title: DarkCorp
 categories: [HackTheBox]
-tags: [nmap, xss, sql-injection, postgresql, ntlm-relay, dnsadmin, kerberos-relay, adcs, silver-ticket, dpapi, shadow-credentials, gpo, windows]
+tags: [xss, sql-injection, postgresql, ntlm-relay, dnsadmin, kerberos-relay, adcs, silver-ticket, dpapi, shadow-credentials, gpo, windows]
 media_subpath: /images/hackthebox_darkcorp/
 image:
   path: 'https://labs.hackthebox.com/storage/avatars/93fba06a4780b65be5a5a4f9512b8e78.png'

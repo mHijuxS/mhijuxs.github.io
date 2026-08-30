@@ -1,7 +1,7 @@
 ---
 title: Velorum
 categories: [HackingClub]
-tags: [nmap, subdomain-enumeration, git, aws-lambda, mongodb, file-upload, binary-exploitation, suid, insane]
+tags: [subdomain-enumeration, git, aws-lambda, mongodb, file-upload, binary-exploitation, suid, insane]
 media_subpath: '/images/hackingclub_velorum'
 image:
   path: 'https://hackingclub-statics.s3.amazonaws.com/machine/thumbnails/136520353268713be05b4843.15979200'

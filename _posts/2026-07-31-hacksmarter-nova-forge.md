@@ -1,7 +1,7 @@
 ---
 title: Nova Forge
 categories: [HacksmarterLabs]
-tags: [active-directory, windows, smb, ldap, kerberos, nmap, subdomain-enumeration, smtp, file-upload, password-cracking, kerberoasting, targeted-kerberoasting, deleted-object-restoration, bloodhound, bloodyad, acl-abuse, forcechangepassword, protected-users, browser-credentials, dpapi, port-forwarding, petitpotam, ntlm-relay, ntlm-reflection, cve, password-spraying, lsa-dump, mimikatz, dns-dynamic-update, constrained-delegation, s4u2self, s4u2proxy, evil-winrm, impacket, secretsdump, domain-compromise]
+tags: [active-directory, windows, smb, ldap, kerberos, subdomain-enumeration, smtp, file-upload, password-cracking, kerberoasting, targeted-kerberoasting, deleted-object-restoration, bloodhound, bloodyad, acl-abuse, forcechangepassword, protected-users, browser-credentials, dpapi, port-forwarding, petitpotam, ntlm-relay, ntlm-reflection, cve, password-spraying, lsa-dump, mimikatz, dns-dynamic-update, constrained-delegation, s4u2self, s4u2proxy, evil-winrm, impacket, secretsdump, domain-compromise]
 media_subpath: /images/hacksmarter_nova-forge/
 image:
   path: 'https://images.coursestack.com/6107e554-1c96-490e-92cb-e031d8e49aec/75a3b3d6-1e24-4126-93f7-1dd0ab02c1c7'

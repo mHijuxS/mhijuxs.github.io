@@ -1,7 +1,7 @@
 ---
 title: Embedded
 categories: [HacksmarterLabs]
-tags: [web, nmap, username-enumeration, mfa, otp, xss, account-takeover, headless-browser, file-read, ssh-key, linux, docker]
+tags: [web, username-enumeration, mfa, otp, xss, account-takeover, headless-browser, file-read, ssh-key, linux, docker]
 media_subpath: /images/hacksmarter_embedded/
 image:
   path: 'https://images.coursestack.com/e67de997-e6bc-4a21-8ef4-dc0f66211495/f90996b7-cb5a-415a-a8cf-06085adc8774?w=600'

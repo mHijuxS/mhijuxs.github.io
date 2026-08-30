@@ -1,7 +1,7 @@
 ---
 title: Dark
 categories: [HacksmarterLabs]
-tags: [linux, nmap, web, wordpress, cve, oauth, account-takeover, php, rce, docker, privilege-escalation]
+tags: [linux, web, wordpress, cve, oauth, account-takeover, php, rce, docker, privilege-escalation]
 media_subpath: /images/hacksmarter_dark/
 image:
   path: 'https://images.coursestack.com/bb164cba-ddc9-4cb0-8e95-ad4853d0143c/d5c172fd-537d-4b43-8fe1-39cf373da7b8'

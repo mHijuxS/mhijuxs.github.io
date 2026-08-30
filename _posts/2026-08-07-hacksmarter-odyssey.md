@@ -1,7 +1,7 @@
 ---
 title: Odyssey
 categories: [HacksmarterLabs]
-tags: [linux, nmap, web, flask, ssti, ssh-key, password-cracking, credential-reuse, windows, active-directory, backup-operators, uac-bypass, secretsdump, pass-the-hash, username-enumeration, bloodyad, acl-abuse, gpo, defender-evasion, evil-winrm, impacket, privilege-escalation, domain-compromise]
+tags: [linux, web, flask, ssti, ssh-key, password-cracking, credential-reuse, windows, active-directory, backup-operators, uac-bypass, secretsdump, pass-the-hash, username-enumeration, bloodyad, acl-abuse, gpo, defender-evasion, evil-winrm, impacket, privilege-escalation, domain-compromise]
 media_subpath: /images/hacksmarter_odyssey/
 image:
   path: 'https://images.coursestack.com/1205dc56-4441-47f0-b7d0-47b2113c43dc/bc9e861a-8ae5-4711-a963-8eb3d20e7ef3'
