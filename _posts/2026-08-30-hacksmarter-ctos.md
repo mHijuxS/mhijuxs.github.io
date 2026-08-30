@@ -941,12 +941,12 @@ Certipy v5.1.0 - by Oliver Lyak (ly4k)
 
 ---
 
-## 12. `it_ops_lead` to the domain: a group membership that owns a GPO
+## 12. `it_ops_lead` to the domain: a group membership that can write a GPO
 
 `it_ops_lead` marked as owned in BloodHound produces a three-node path that ends the engagement:
 
-![A BloodHound graph showing IT_OPS_LEAD with an AddMember edge to POLICY_AUTOMATION_GROUP, which has WriteOwner and further edges to the Default Domain Controllers Policy GPO](bloodhound-policy-automation-group-gpo.png)
-_`IT_OPS_LEAD` can add members to `POLICY_AUTOMATION_GROUP`, and that group holds `WriteOwner` and two further control edges over the **Default Domain Controllers** GPO._
+![A BloodHound graph showing IT_OPS_LEAD with an AddMember edge to POLICY_AUTOMATION_GROUP, which has multiple control edges, including WriteOwner, to the Default Domain Controllers Policy GPO](bloodhound-policy-automation-group-gpo.png)
+_`IT_OPS_LEAD` can add members to `POLICY_AUTOMATION_GROUP`. That group has multiple control edges to the **Default Domain Controllers Policy** GPO; `WriteOwner` is the visible label, but the overlapping arrows also represent direct property and DACL control._
 
 Neither half of that path looks alarming on its own. "IT Operations Lead can manage a policy automation group" is a sentence an approver would sign, and "the policy automation group can manage policies" is what the group is named for. The composition is Domain Admin, because of which GPO it happens to be.
 
@@ -963,6 +963,10 @@ bloodyAD --host dc01 -d $DOMAIN -u it_ops_lead -p ":$NTHASH" \
 ```
 
 A group membership change takes effect for Kerberos on the next TGT, and for the ACL evaluation the next time a DC builds the token, so the new rights are usable immediately with a fresh authentication.
+
+That distinction between the overlapping edges matters. If `WriteOwner` were the group's **only** useful right, the required chain would be: take ownership of the LDAP GPO object, use the owner's implicit `WriteDACL` right to grant Full Control, and only then modify the policy. It is not the only right here. On a reset instance, the group's ACE on the LDAP GPO container resolves to `WRITE_OWNER|WRITE_DACL|...|WRITE_PROP|...|CREATE_CHILD`; [`bloodyAD get writable --otype gpo --detail`](https://github.com/CravateRouge/bloodyAD) consequently reports direct writes to `gPCMachineExtensionNames`, `versionNumber`, `DACL`, and `OWNER`. The separate SYSVOL ACL grants `CTOS\Policy_Automation_Group` inheritable `FULL` access to the policy directory. The group therefore controls both halves of this GPO before any ownership change.
+
+The first `pygpoabuse` command below works immediately after the membership change because it uses those existing property and SYSVOL rights. The ownership-and-DACL sequence shown later is a redundant troubleshooting detour, not a prerequisite that has been omitted.
 
 The target GPO's GUID is `{6AC1786C-016F-11D2-945F-00C04FB984F9}`, which is not a random identifier: it is the well-known GUID of the **Default Domain Controllers Policy** in every Active Directory forest, linked to the `Domain Controllers` OU. Writing to it is code execution as `SYSTEM` on every domain controller. The mechanics of how a GPO is stored, why write access to it is remote code execution, and what else can be planted in one are on the [GPO abuse](/theory/windows/AD/gpo/) theory page.
 
@@ -990,7 +994,9 @@ SMB         10.0.30.167     445    DC01             [*] Windows Server 2022 Buil
 SMB         10.0.30.167     445    DC01             [+] CTOS.CORP\it_ops_lead:fd8bd0720fec58d0b5005257dd9f3723
 ```
 
-The natural reading of an unchanged result is that the write did not really take, and the natural response is to add more permissions. Taking ownership of the GPO and rewriting its DACL is the standard escalation from a `WriteOwner` edge:
+The unchanged authentication result is easy to misread as evidence that the GPO write failed, even though `pygpoabuse` explicitly reported creating the task. Treating `WriteOwner` as though it were the only available edge leads to the standard ownership escalation: take ownership of the GPO, then use the owner's implicit `WriteDACL` right to grant Full Control.
+
+That sequence would be necessary if `WriteOwner` were the only route to modification. It is unnecessary here because the group's existing direct rights already allowed the first `pygpoabuse` run to write both the policy metadata and its SYSVOL content:
 
 ```bash
 bloodyAD --host dc01 -d $DOMAIN -u it_ops_lead -p ":$NTHASH" \
@@ -1028,7 +1034,7 @@ nxc smb dc01 -u it_ops_lead -H $NTHASH
 SMB         10.0.30.167     445    DC01             [+] CTOS.CORP\it_ops_lead:fd8bd0720fec58d0b5005257dd9f3723 (Pwn3d!)
 ```
 
-> The ownership takeover and the DACL rewrite were not needed. The group membership alone carried enough rights to write the task, and the first `pygpoabuse` run had already succeeded; the only missing ingredient was **time**. Domain controllers refresh Group Policy every 5 minutes by default, against 90 minutes plus a random offset for member machines, so the wait was short but not instant. When a primitive reports success and the effect has not appeared, re-read the success message before escalating: two extra writes here meant two extra directory modifications, an ownership change on a tier-0 object, and a DACL that now has to be reverted.
+> The ownership takeover and DACL rewrite were not needed. Membership in `POLICY_AUTOMATION_GROUP` supplied direct GPO write access as well as the separate `WriteOwner` path, and the first `pygpoabuse` run had already used those direct rights successfully. Its `ScheduledTask ... created!` message, followed by the second run finding that same task in `ScheduledTasks.xml`, proves the payload predated the owner and DACL changes. The only missing ingredient was **time**: domain controllers refresh Group Policy every 5 minutes by default, against 90 minutes plus a random offset for member machines. When a primitive reports success and the effect has not appeared, re-read the success message before escalating; the two redundant commands here changed the owner and DACL of a tier-0 object and both modifications now have to be reverted.
 {: .prompt-tip }
 
 `(Pwn3d!)` on the **SMB** protocol does mean administrative access, and on a domain controller the local `Administrators` group is `BUILTIN\Administrators` in the domain itself. `it_ops_lead` is now Domain Admin in everything but name.

@@ -2,7 +2,7 @@
 title: Group Policy Object (GPO) Abuse
 layout: post
 date: 2026-08-30
-description: "A Group Policy Object is half an LDAP object and half a folder on SYSVOL. Write access to either half is code execution as SYSTEM on every machine the policy is linked to, which is why a single ACE on the Default Domain Controllers Policy is a domain compromise."
+description: "A Group Policy Object is half an LDAP object and half a folder on SYSVOL. Control of both halves can become code execution as SYSTEM on every machine the policy is linked to, which is why delegated control of the Default Domain Controllers Policy can compromise a domain."
 permalink: /theory/windows/AD/gpo/
 ---
 
@@ -38,23 +38,25 @@ Two links matter more than any other because they exist in every domain by defau
 | Default Domain Policy | `{31B2F340-016D-11D2-945F-00C04FB984F9}` | The domain root |
 | Default Domain Controllers Policy | `{6AC1786C-016F-11D2-945F-00C04FB984F9}` | The `Domain Controllers` OU |
 
-Write access to the second one is a domain compromise by itself: its scope is every domain controller, and SYSTEM on a domain controller is `NTDS.dit`.
+Effective write access to both halves of the second one is a domain-compromise path: its scope is every domain controller, and SYSTEM on a domain controller means access to `NTDS.dit`.
 
-> A finding of "non-admin group has WriteOwner on a GPO" reads as a medium-severity ACL issue in a report. Which GPO it is decides everything. On a test OU it is a local privilege escalation on a handful of workstations. On `{6AC1786C-...}` it is Domain Admin, and no other step is required.
+> A finding of "non-admin group has WriteOwner on a GPO" can read like a medium-severity ACL issue in a report. Which GPO it is and whether the principal can also modify its SYSVOL template decide the impact. On a test OU the complete path may yield SYSTEM on a handful of workstations; on `{6AC1786C-...}` the complete path reaches every domain controller. `WriteOwner` is not itself a policy-content write: it is the first step in an LDAP ownership-to-DACL chain.
 {: .prompt-danger }
 
 ## Which rights are enough
 
-Any right that lets you rewrite the object or its security descriptor eventually collapses into full control:
+The following edges concern the LDAP Group Policy Container (GPC). They can provide or lead to control of that directory object:
 
-- **`GenericAll` / `GenericWrite`** on the GPC: write the attributes directly.
-- **`WriteDacl`**: grant yourself `GenericAll`, then write.
-- **`WriteOwner`**: take ownership, and an owner can always rewrite the DACL, so this reduces to the previous case in two steps.
-- **Write access to the SYSVOL folder** without any LDAP right: you can change the settings, but clients will not re-read them until `versionNumber` changes, so this is usually paired with one of the above.
+- **`GenericAll` / `GenericWrite`** on the GPC: write the relevant attributes directly.
+- **`WriteDacl`** on the GPC: grant yourself the required GPC rights, then write its attributes.
+- **`WriteOwner`** on the GPC: take ownership; the owner has implicit `WriteDACL`, so this reduces to the previous case in two steps.
+- **`Owns`** on the GPC: skip the ownership change and start with the DACL write.
 
-BloodHound surfaces these as `GenericAll`, `GenericWrite`, `WriteDacl`, `WriteOwner` and `Owns` edges pointing at a `GPO` node, and the useful query is always "what does that GPO link to".
+None of those LDAP rights automatically proves write access to the separate Group Policy Template (GPT) directory in SYSVOL. Conversely, write access to the SYSVOL folder alone lets you alter settings files, but not bump the GPC's `versionNumber` or register a client-side extension. A conventional GPO payload therefore needs effective write access to **both** halves. Their ACLs are commonly aligned by normal administration, but they are separate security descriptors and can drift; verify both instead of inferring one from the other.
 
-Taking ownership and then writing a DACL is the standard two-command sequence:
+BloodHound surfaces `GenericAll`, `GenericWrite`, `WriteDacl`, `WriteOwner`, and `Owns` edges pointing at a `GPO` node. Those edges explain the directory-side path and help answer "what does that GPO link to," but an edge alone is not evidence of the corresponding NTFS permission on SYSVOL.
+
+When `WriteOwner` is the starting LDAP right, taking ownership and then writing the GPC DACL is the standard two-command sequence:
 
 ```bash
 bloodyAD --host $DC -d $DOMAIN -u $USER -p $PASS \
@@ -80,7 +82,7 @@ Group Policy is a large surface, and several branches of it are equivalent to co
 | Software Installation | Installs an MSI from a UNC path | SYSTEM |
 | Registry preference | Writes any value under `HKLM` | SYSTEM |
 
-The **immediate scheduled task** is what the tooling uses, because it is the only one that fires without a reboot or a logon and then removes itself.
+The **immediate scheduled task** is what the tooling uses, because it fires without a reboot or a logon and removes the local scheduled-task object after running. That local removal does not remove the preference item from the GPO; while the XML remains deployed, later policy processing can create and execute it again.
 
 ### The immediate task, concretely
 
@@ -106,7 +108,7 @@ pygpoabuse -gpo-id "<GPO-GUID>" $DOMAIN/$USER -hashes :$NTHASH \
 
 Its Windows counterpart is [`SharpGPOAbuse`](https://github.com/FSecureLABS/SharpGPOAbuse), which does the same from an existing session.
 
-> `pyGPOAbuse` refuses to run a second time against a GPO that already has a `ScheduledTasks.xml`, printing `The GPO already includes a ScheduledTasks.xml` and listing the existing tasks. That is a safety check, not a failure: it exists so you do not silently clobber a legitimate preferences file. `-f` appends instead, and `-v` lists what is already there.
+> `pyGPOAbuse` refuses to run a second time against a GPO that already has a `ScheduledTasks.xml`, printing `The GPO already includes a ScheduledTasks.xml` and listing the existing tasks. That is a safety check: it prevents silently clobbering an existing preferences file. In a troubleshooting sequence, finding the task from an earlier run also proves that the earlier SYSVOL write succeeded. `-f` appends instead, and `-v` lists what is already there.
 {: .prompt-warning }
 
 ## Timing: why nothing appears to happen
@@ -120,11 +122,11 @@ Writing the task is instant. Its effect is not, because the client decides when 
 
 The short DC interval is what makes the Default Domain Controllers Policy a practical target rather than a theoretical one: the payload lands within minutes. On member machines, expect to wait, or to have a session on the host and force it with `gpupdate /force`.
 
-The usual mistake at this point is to assume the write failed and start adding more permissions. Re-check the primitive itself before escalating: a successful `ScheduledTask ... created!` line means the GPO is already poisoned and the only remaining variable is time.
+The usual mistake at this point is to assume the write failed and start adding more permissions. Re-check the primitive before escalating: a successful `ScheduledTask ... created!` line means the tool completed its GPO modifications, so first allow for refresh and verify the target is in scope. If the effect still does not appear, investigate replication, security/WMI filtering, GPO precedence, and client-side processing rather than assuming another ACL write is required.
 
 ## Cleanup
 
-An immediate task with `RemoveObjectWhenNoLongerApplies` deletes the scheduled task on the client, but it does **not** delete `ScheduledTasks.xml` from SYSVOL. Anything left behind stays in the policy and applies to every machine in scope, forever, so remove the file and revert `gPCMachineExtensionNames` and any DACL or owner change after the engagement. `dacledit.py` writes a `.bak` of the original descriptor for exactly this reason.
+An immediate task deletes its local scheduled-task object after execution, but it does **not** delete `ScheduledTasks.xml` from SYSVOL. The preference item remains available to later policy processing on machines in scope, so remove only the injected item, restore any extension metadata that the tool added, and increment the appropriate GPC/GPT version so clients notice the cleanup. Restore a pre-existing XML file rather than deleting it wholesale, and revert any owner or DACL change. `dacledit.py` writes a `.bak` of the original LDAP security descriptor for that part of the cleanup.
 
 ## Detection and defence
 
