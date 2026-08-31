@@ -44,7 +44,7 @@ The lab hands over a long-lived access key pair. Write it into a named profile r
 cat >> ~/.aws/credentials <<'EOF'
 
 [second]
-aws_access_key_id     = AKIAQ7H5VOHZ234IDUW3
+aws_access_key_id     = AKIA<REDACTED>
 aws_secret_access_key = <REDACTED_SECRET_KEY>
 EOF
 
@@ -129,7 +129,7 @@ aws lambda list-functions
             "Version": "$LATEST",
             "Environment": {
                 "Variables": {
-                    "LAMBDA_MANAGER_AK": "AKIAQ7H5VOHZ3I72K7PQ",
+                    "LAMBDA_MANAGER_AK": "AKIA<REDACTED>",
                     "LAMBDA_MANAGER_SK": "<REDACTED_SECRET_KEY>"
                 }
             },
@@ -199,7 +199,7 @@ Load the leaked pair as a second profile and identify it, exactly as in step 1.
 cat >> ~/.aws/credentials <<'EOF'
 
 [second_lambda_manager]
-aws_access_key_id     = AKIAQ7H5VOHZ3I72K7PQ
+aws_access_key_id     = AKIA<REDACTED>
 aws_secret_access_key = <REDACTED_SECRET_KEY>
 EOF
 
@@ -279,7 +279,7 @@ cat deployment-script.sh
 # WordPress Deployment and Backup Automation Script
 # Authorized access only.
 
-export AWS_ACCESS_KEY_ID="AKIAQ7H5VOHZWMRXWVGI"
+export AWS_ACCESS_KEY_ID="AKIA<REDACTED>"
 export AWS_SECRET_ACCESS_KEY="<REDACTED_SECRET_KEY>"
 
 echo "Starting WordPress backup job..."
@@ -300,7 +300,7 @@ Load it as the third profile:
 cat >> ~/.aws/credentials <<'EOF'
 
 [second_deploy]
-aws_access_key_id     = AKIAQ7H5VOHZWMRXWVGI
+aws_access_key_id     = AKIA<REDACTED>
 aws_secret_access_key = <REDACTED_SECRET_KEY>
 EOF
 
@@ -507,7 +507,7 @@ curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/cg-ec2-
   "Code" : "Success",
   "LastUpdated" : "2026-08-03T20:53:32Z",
   "Type" : "AWS-HMAC",
-  "AccessKeyId" : "ASIAQ7H5VOHZ7DEJZHH6",
+  "AccessKeyId" : "ASIA<REDACTED>",
   "SecretAccessKey" : "<REDACTED_SECRET_KEY>",
   "Token" : "<REDACTED_SESSION_TOKEN>",
   "Expiration" : "2026-08-04T02:56:02Z"
@@ -521,7 +521,7 @@ Three things to read out of that blob:
 - **`Type: AWS-HMAC`.** Standard SigV4 signing credentials, nothing special to handle.
 
 ```bash
-export AWS_ACCESS_KEY_ID="ASIAQ7H5VOHZ7DEJZHH6"
+export AWS_ACCESS_KEY_ID="ASIA<REDACTED>"
 export AWS_SECRET_ACCESS_KEY="<REDACTED_SECRET_KEY>"
 export AWS_SESSION_TOKEN="<REDACTED_SESSION_TOKEN>"
 export AWS_DEFAULT_REGION="us-east-1" AWS_PAGER=""

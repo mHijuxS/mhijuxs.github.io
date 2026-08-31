@@ -272,8 +272,8 @@ aws iam list-access-keys --user-name admin_lab
 ```json
 {
   "AccessKeyMetadata": [
-    { "AccessKeyId": "AKIA5Y6JLPXSTTUFLJ5K", "Status": "Inactive" },
-    { "AccessKeyId": "AKIA5Y6JLPXSUZ25VEFM", "Status": "Inactive" }
+    { "AccessKeyId": "AKIA<REDACTED>", "Status": "Inactive" },
+    { "AccessKeyId": "AKIA<REDACTED>", "Status": "Inactive" }
   ]
 }
 ```
@@ -281,7 +281,7 @@ aws iam list-access-keys --user-name admin_lab
 Both are `Inactive`, so deleting one is unlikely to break anything live. `SelfManageAccess` includes `iam:DeleteAccessKey`, so the sequence is: delete one, then mint a fresh one.
 
 ```bash
-aws iam delete-access-key --user-name admin_lab --access-key-id AKIA5Y6JLPXSTTUFLJ5K
+aws iam delete-access-key --user-name admin_lab --access-key-id AKIA<REDACTED>
 aws iam create-access-key --user-name admin_lab
 ```
 

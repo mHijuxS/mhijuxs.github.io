@@ -140,8 +140,8 @@ The repository contains a `credentials.json` file with AWS credentials:
 ```bash
 ➜  vault_app git:(main) cat credentials.json
 {
-    "aws_access_key_id": "AKIA3F4D2QWE7ZX1GQNL",
-    "aws_secret_access_key": "9dTx3i7+pA89LU7sDkEjfM/NyzRmRY+xu4HP02Gb",
+    "aws_access_key_id": "AKIA<REDACTED>",
+    "aws_secret_access_key": "<REDACTED_SECRET_KEY>",
     "region": "us-east-1"
 }
 ```
@@ -184,8 +184,8 @@ We configure the AWS CLI with the discovered credentials:
 
 ```bash
 ➜  vault_app git:(main) aws configure
-AWS Access Key ID [****************GQNL]: AKIA3F4D2QWE7ZX1GQNL
-AWS Secret Access Key [****************02Gb]: 9dTx3i7+pA89LU7sDkEjfM/NyzRmRY+xu4HP02Gb
+AWS Access Key ID [****************GQNL]: AKIA<REDACTED>
+AWS Secret Access Key [****************02Gb]: <REDACTED_SECRET_KEY>
 Default region name [us-east-1]: us-east-1
 Default output format [json]: json
 ```

