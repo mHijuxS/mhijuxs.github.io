@@ -26,6 +26,7 @@ permalink: /theory/
 
 - [Kerberos](/theory/protocols/kerberos)
 - [LDAP](/theory/protocols/ldap)
+- [NFS](/theory/protocols/nfs)
 - [SMB](/theory/protocols/smb)
 
 ## Windows
