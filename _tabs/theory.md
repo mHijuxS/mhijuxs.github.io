@@ -10,6 +10,7 @@ permalink: /theory/
 - [Command Injection](/theory/misc/cmi)
 - [Docker](/theory/misc/docker)
 - [File Inclusion](/theory/misc/file-inclusion)
+- [MSSQL](/theory/misc/mssql)
 - [PHP](/theory/misc/php)
 - [PHAR Deserialization](/theory/misc/phar-deserialization)
 - [Port Forward](/theory/misc/portforward)

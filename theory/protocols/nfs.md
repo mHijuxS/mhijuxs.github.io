@@ -158,6 +158,65 @@ The SUID trick needs the export to be mounted `suid` on the server side (`nosuid
 
 `ro` with `no_root_squash` is weaker but far from harmless: it is arbitrary file read as root, which reaches `/etc/shadow`, private keys, database credentials and flags.
 
+## Escaping the export: file handles and subtree_check
+
+An export restricts which *directory* a client may attach. It does not, on its own, restrict which files a client may subsequently address, and those are two different statements.
+
+After the initial mount, every NFS operation names its target with a **file handle**: an opaque byte string the server issued earlier. Opaque is a protocol-level claim, not a cryptographic one. Linux's `nfsd` builds handles to a fixed layout, and that layout is short enough to reconstruct by hand:
+
+```text
+01 00 07 00 | 4667020000000000 58e2cfdfe1144b9f9d2265cf50ecc35d
+ |  |  |  |         |                        |
+ |  |  |  |         inode of the             UUID of the
+ |  |  |  |         exported directory       filesystem
+ |  |  |  fileid type: 0 = the export root itself
+ |  |  fsid type: 7 = 8-byte inode + 16-byte UUID
+ |  auth type: 0 = none
+ handle version: 1
+```
+
+The important structural fact is in the second half. The handle identifies a **filesystem** by UUID, and then a **file within it** by inode number. There is no field anywhere in it that says "and only below `/var/nfs/documents`". Change the trailing inode and the handle addresses a different file on the same filesystem, wherever it happens to live in the tree.
+
+The option that is supposed to catch this is `subtree_check`. With it set, `nfsd` verifies on every lookup that the inode a handle names really does sit beneath the exported directory. It is **off by default** on modern Linux, because it breaks when a file is renamed while a client holds it open and because the check costs a path walk per operation. `no_subtree_check` appears in nearly every `/etc/exports` example on the internet, including the manual page's own recommendation.
+
+So on a default Linux export the escape is a substitution:
+
+- Set the fileid type byte to `2` (`FILEID_INO32_GEN_PARENT`: 32-bit inode, generation, parent inode, parent generation).
+- Append inode `2` with parent `2`. Inode 2 is the root directory of every `ext2/3/4` filesystem, and the root's parent is itself. On XFS it is discoverable the same way; on Btrfs the equivalent is a subvolume ID, which has to be searched.
+
+```text
+01 00 07 02 | 4667020000000000 58e2...c35d | 02000000 00000000 02000000 00000000
+          ^^   unchanged fsid, same filesystem      inode 2         parent 2
+```
+
+The server checks that the handle is well-formed and that it refers to a live inode on a filesystem it exports, both of which are true, and answers. If the export happens to sit on the same filesystem as `/`, the result is read access to the entire operating system.
+
+[nfs-security-tooling](https://github.com/hvs-consulting/nfs-security-tooling) automates both halves. `nfs_analyze` performs the substitution and prints the working root handle, and `fuse_nfs` mounts an arbitrary handle as a local directory:
+
+```bash
+sudo nfs_analyze 10.10.10.10
+sudo fuse_nfs /mnt/target 10.10.10.10 --manual-fh <root handle> --fake-uid --allow-write
+```
+
+`--fake-uid` reads each file's owner from the server and re-sends the request claiming that UID, which is legal precisely because `AUTH_SYS` never verified it. The driver also mirrors each file's owner permission bits into the "other" field locally, so the client kernel does not block operations the server intends to allow. Both are client-side cosmetics: `ls -ln` shows the numeric UIDs the server actually sent.
+
+### Reading /etc/shadow without claiming UID 0
+
+`root_squash` remaps an incoming **UID** of 0. It says nothing about group IDs. On Debian and Ubuntu, `/etc/shadow` is mode `0640` owned by `root:shadow`, and `shadow` is GID 42, so a request carrying UID 65534 and GID 42 satisfies the group read bit without ever asserting UID 0. The squash never fires because the condition that triggers it was never met. SuSE uses GID 15 for the same group.
+
+This is the trust-the-client model aimed at a group instead of a user, and it is the reason `nfs_analyze` reports the shadow file automatically once an escape succeeds.
+
+### Two things the escape does not give you
+
+- **It is not `no_root_squash`.** UID 0 is still squashed, so `/root` (mode `0700`, owned by root) lists as empty and root-owned files stay unreadable. What the escape reaches is everything readable by *some* non-root UID or GID, which in practice means every user home directory, every SSH private key in one, and `/etc/shadow` via the group trick.
+- **It needs the export and the target data on the same filesystem.** A handle carries one filesystem UUID. If `/var/nfs/documents` is its own partition, inode 2 is that partition's root and nothing else.
+
+### Detecting and preventing it
+
+- Set `subtree_check` on exports where the performance cost is acceptable, and understand that it is a mitigation for this specific class rather than a general hardening.
+- Better, put each export on its own filesystem or bind-mounted subvolume, so that a rewritten handle reaches nothing of value.
+- Best, use NFSv4 with `sec=krb5p`, where the handle is not the only thing standing between a client and a file.
+
 ## Writing the export table yourself
 
 The export table is consumed by `exportfs`, which runs as root. Anything that lets an unprivileged user influence `/etc/exports` and then get `exportfs` re-run is a privilege escalation, because the attacker chooses both the path and the squash options.
@@ -243,4 +302,6 @@ Boxes on this site whose path goes through NFS, listed automatically from their 
 - [RFC 1813 - NFS Version 3 Protocol Specification](https://datatracker.ietf.org/doc/html/rfc1813)
 - [RFC 8881 - NFS Version 4 Protocol](https://datatracker.ietf.org/doc/html/rfc8881)
 - [libnfs](https://github.com/sahlberg/libnfs)
+- [nfs-security-tooling](https://github.com/hvs-consulting/nfs-security-tooling)
+- [HvS Consulting - NFS security: identifying and exploiting misconfigurations](https://www.hvs-consulting.de/en/nfs-security-identifying-and-exploiting-misconfigurations/)
 - [Hacktricks - Pentesting NFS](https://book.hacktricks.wiki/en/network-services-pentesting/nfs-service-pentesting.html)
