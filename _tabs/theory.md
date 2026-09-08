@@ -31,6 +31,7 @@ permalink: /theory/
 
 ## Windows
 - [Logon Types and Privileges](/theory/windows/logon-and-privileges)
+- [Services and Service Abuse](/theory/windows/services)
 
 ### Active Directory
 - [ACLs](/theory/windows/AD/acl)

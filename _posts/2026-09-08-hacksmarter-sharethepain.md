@@ -1,5 +1,6 @@
 ---
 title: ShareThePain
+date: 2026-09-08 09:00:00 +0000
 categories: [HacksmarterLabs]
 tags: [windows, active-directory, smb, null-authentication, ntlm-capture, password-cracking, bloodhound, acl-abuse, forcechangepassword, bloodyad, evil-winrm, port-forwarding, ligolo, mssql, impacket, seimpersonateprivilege, efspotato, semanagevolumeprivilege, privilege-escalation, domain-compromise]
 media_subpath: /images/hacksmarter_sharethepain/
