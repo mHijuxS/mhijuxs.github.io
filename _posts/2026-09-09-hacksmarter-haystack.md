@@ -14,13 +14,13 @@ image:
 
 The way in is anonymous FTP. The share hands out five files, and four of them are unmodified upstream project templates: a Nextra portfolio starter, a Terraform reverse-proxy module, a generic bash backup script and a Joomla base-install SQL dump. The fifth, `app.zip`, is a WinZip AES archive whose password falls to `rockyou.txt` in four seconds. Inside is a Next.js Neo4j example with a `.git` directory still attached, and the git history contains the whole point of the box: the initial commit stored real database credentials in `.env.local`, and the follow-up commit blanked them out. Blanking a value in a tracked file does not remove it from the repository.
 
-Those credentials belong to `justin`, and they authenticate to FTP and to IMAP but not to SSH, because that account is restricted to public-key authentication. Justin's home is also mounted read-only, which is why neither an FTP `STOR` nor a later shell-based append can plant a key in `authorized_keys`. The password is real but there is no service willing to turn it into a shell, so the answer has to come from the web application. A content scan finds a Roundcube 1.6.10 installation at `/roundcube` that nothing on the main site links to, and 1.6.10 is the last version affected by CVE-2025-49113, a post-authentication PHP object injection that turns valid webmail credentials into command execution as `www-data`.
+Those credentials belong to `justin`, and they authenticate to FTP and to IMAP but not to SSH, because `sshd_config` carries a `Match Group justin` block that turns password authentication off for that group. Neither an FTP `STOR` nor a later shell-based append can plant a key in `authorized_keys` either, for two unrelated reasons that both present as a permissions problem and neither of which is a permission. The password is real but there is no service willing to turn it into a shell, so the answer has to come from the web application. A content scan finds a Roundcube 1.6.10 installation at `/roundcube` that nothing on the main site links to, and 1.6.10 is the last version affected by CVE-2025-49113, a post-authentication PHP object injection that turns valid webmail credentials into command execution as `www-data`.
 
 From `www-data` the privilege escalation half is a chain of credentials left lying around in the filesystem:
 
 - The Neo4j application password is also Justin's Linux password, so `su justin` works from the web shell.
 - Justin is in `adm`, which makes the rotated vsftpd log readable, and one line in it records a second user's real password in the field vsftpd reserves for the anonymous login string.
-- That second user, `gilbert`, holds a single sudo rule, `(root) /usr/bin/git diff *`, which is invisible to `sudo -l` from the nested `su` shell and only shows up from a real SSH login session.
+- That second user, `gilbert`, holds a single sudo rule, `(root) /usr/bin/git diff *`, which is invisible to `sudo -l` from anything descended from the web shell, `su -` included. `apache2.service` runs with `InaccessiblePaths=-/etc/sudoers`, so every process in that tree reads a zero-byte sudoers and sees an empty policy. The rule appears from any process that starts outside that namespace, which in practice means SSH.
 - `git diff` spawns a pager for long output, and `less` will start a shell on demand, so a diff large enough to page becomes a root shell.
 
 There is also an unintended root that skips the sudo rule entirely: the host runs a kernel vulnerable to DirtyFrag (CVE-2026-43284), and a public proof of concept takes any unprivileged local user straight to `uid=0`.
@@ -360,7 +360,31 @@ ftp> put id_ed25519.pub authorized_keys
 550 Permission denied.
 ```
 
-A `550` on `STOR` has two common causes and they are worth separating, because the fix is different for each. The first is vsftpd policy: `write_enable=NO` in `vsftpd.conf` rejects every upload regardless of filesystem permissions. The second is the filesystem itself. Later in this chain, with an actual shell as `justin`, the same write fails again and the kernel gives the real answer:
+A `550` on `STOR` is a policy answer, not a filesystem one. vsftpd refuses every upload unless `write_enable=YES` appears in its configuration, and the shipped `/etc/vsftpd.conf` on this box never sets it:
+
+```bash
+grep -vE '^\s*#|^$' /etc/vsftpd.conf
+```
+
+```text
+listen=NO
+listen_ipv6=YES
+anonymous_enable=YES
+local_enable=YES
+dirmessage_enable=YES
+use_localtime=YES
+xferlog_enable=YES
+connect_from_port_20=YES
+secure_chroot_dir=/var/run/vsftpd/empty
+pam_service_name=vsftpd
+rsa_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem
+rsa_private_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
+ssl_enable=NO
+```
+
+`write_enable` is absent, and its default is `NO`. The daemon rejected the upload before the kernel was ever consulted, so the permission bits on `authorized_keys` were never the question.
+
+The second attempt, much later in this chain, fails differently. With an actual shell as `justin` obtained through the web application, appending to the same file produces a kernel error rather than a daemon error:
 
 ```bash
 echo 'ssh-ed25519 AAAA...' >> ~/.ssh/authorized_keys
@@ -370,7 +394,10 @@ echo 'ssh-ed25519 AAAA...' >> ~/.ssh/authorized_keys
 bash: /home/justin/.ssh/authorized_keys: Read-only file system
 ```
 
-The home directory is on a read-only mount. No amount of correct ownership will produce a write, and no FTP configuration change would have helped either. This is worth internalising: `ls -l` describes what the ACL would allow, not what the mount will permit, and the two are checked at different layers.
+The natural conclusion is that home directories are on a read-only mount, and that conclusion is wrong. `/home` is not a separate mount on this machine at all, and the root filesystem is read-write. That `EROFS` is a property of the shell that produced it, not of the box, and section 11 takes it apart with root in hand. For now the useful form of the lesson is narrower than "check the mounts": `ls -l` describes what the ACL would allow, the error describes what *this process* was permitted, and neither is a statement about the filesystem everyone else is using.
+
+> Two failed writes to the same path, two completely different causes, and both of them read as "permission denied" at a glance. Separating the layer that refused you, the application, the kernel's view of the mount, or the file's own mode, is what keeps an enumeration note from becoming a wrong fact you build the rest of the engagement on.
+{: .prompt-warning }
 
 **IMAP accepts it, and the mailbox is empty.** Port 993 is IMAP over implicit TLS, so a plain `nc` will not speak it. `openssl s_client` does the TLS handshake and then hands the raw session over, and `-crlf` is required because IMAP commands must be terminated with `\r\n` while a terminal sends bare `\n`:
 
@@ -622,11 +649,13 @@ User gilbert may run the following commands on lk-linux2:
     (root) /usr/bin/git diff *
 ```
 
-Same user, same host, same binary, opposite answers. The only thing that changed is how the session was created: one shell descends from an Apache worker through `su`, the other is a real login session that sshd built through PAM, with its own tty, its own PAM session stack and its own environment. sudo's behaviour depends on that context, and a nested `su` shell is not equivalent to a login.
+Same user, same host, same binary, opposite answers.
 
-The practical rule is the one worth carrying off this box: **the moment you recover a password, spend the one command it costs to try a real login with it.** Re-running enumeration from a proper session, rather than trusting what a shell inherited three processes deep reported, is what turns a dead end into the privilege escalation here.
+The reflex explanation is that the nested shell is not a login shell, and that `su - gilbert` would have fixed it. It does not: the login form is refused in exactly the same words, and so is every other combination of accounts and dashes. The second reflex, that `su` fails to build the session sshd creates, is also wrong. Both deserve a proper autopsy, and both need root to perform, which the box has not given up yet. Section 11 runs the whole investigation once it has.
 
-> This cuts both ways during enumeration. A negative result from a degraded shell is not evidence of absence, and it is worth keeping a short list of the checks that are known to misbehave without a login session or a tty: `sudo -l`, `su`, anything reading `/proc/self/loginuid`, `systemctl --user`, and any tool that expects `$HOME`, `$USER` or `$TERM` to be set correctly. Re-run them after every upgrade in session quality, not just once.
+What matters at this point in the chain is the operational half, which does not require understanding the cause at all: **the moment you recover a password, spend the one command it costs to try a real login with it.** Re-running enumeration from a second, independent origin is what turns this dead end into the privilege escalation.
+
+> A negative result from a shell inherited out of a service is not evidence of absence, and these failures do not look like failures: a file that "does not exist", a directory that "cannot be read", a sudo policy that is simply empty. Re-run anything that matters from a second origin before believing it.
 {: .prompt-warning }
 
 ### Why this rule is a root shell
@@ -706,10 +735,447 @@ id
 uid=0(root) gid=0(root) groups=0(root)
 ```
 
-Note that `/tmp` is writable even though `/home/justin` is not: the read-only mount that blocked the `authorized_keys` write in section 4 covers home directories, not the whole filesystem. Checking `mount` output before concluding that a box is immutable is worth the one command.
+Note that `/tmp` is writable even though `/home/justin` was not. Those two facts have the same cause and neither is a property of the disk: `apache2.service` runs with `PrivateTmp=true`, so this `/tmp` is a service-private tmpfs rather than the host's, and with `ProtectHome=read-only`, which is what refused the `authorized_keys` append in section 4. Section 11 pulls both apart. The practical consequence while staging a binary is that anything written here is invisible to any process outside the web shell's namespace, so do not expect a second session to find it.
 
 > A kernel LPE is a last-resort answer, not a first one, and on a lab it usually means you have skipped something. Enumerate credentials, sudo rules, SUID binaries, cron and writable service files first: those are the paths the box was built around, and they are the paths that teach you something. Reach for the kernel when triage is genuinely exhausted. Note also that running a kernel exploit is the single most likely action in a real engagement to take the host down, which is why it needs written authorisation before you type it.
 {: .prompt-warning }
+
+
+---
+
+## 11. Beyond Root: What the Web Shell Could Not See
+
+Three separate dead ends on this box turn out to have one cause, and none of them can be diagnosed without root, which is why this section comes after the flags rather than during the chain. What follows is the investigation in the order the hypotheses actually fell, because every wrong answer along the way is one a reader will reach for too, and the reasons each fails are more useful than the answer on its own.
+
+### The contradiction, restated
+
+Three symptoms, collected in three different sections, none of them obviously related.
+
+The sudo policy disagrees with itself depending on where you ask. From the `su gilbert` shell nested inside the reverse shell:
+
+```text
+sudo: Sorry, user gilbert may not run sudo on lk-linux2.
+```
+
+From an SSH session as the same user, seconds later:
+
+```text
+User gilbert may run the following commands on lk-linux2:
+    (root) /usr/bin/git diff *
+```
+
+Section 4 produced the second symptom: appending to `justin`'s `authorized_keys` from the web shell failed with `Read-only file system`, on a file whose ownership and mode were correct. Section 10 produced the third: `/tmp` was writable when `/home` was not, which was filed as a quirk of the mount layout.
+
+The working assumption from here is that one cause is more likely than three coincidences.
+
+### Hypothesis 1: the nested shell is not a login shell
+
+The first candidate, and the one almost everyone reaches for. `su(1)` describes what `-`, `-l` and `--login` change, and it is not a small list:
+
+> su does:
+>
+> - clear all the environment variables except `TERM`, `COLORTERM`, `NO_COLOR` and variables specified by `--whitelist-environment`
+> - initialize the environment variables `HOME`, `SHELL`, `USER`, `LOGNAME`, and `PATH`
+> - change to the target user's home directory
+> - set `argv[0]` of the shell to `-` in order to make the shell a login shell
+
+The same page calls the bare form a backward-compatibility behaviour and recommends "to always use the `--login` option (instead of its shortcut `-`) to avoid side effects caused by mixing environments." Plausible, and easy to test.
+
+Before testing it, it is worth being precise about what a login shell actually is, because the last bullet is the whole definition and it is easy to misread. `argv[0]` is the name a process is handed for itself, and for shells the convention is a leading dash. Bash exposes its own verdict:
+
+```bash
+echo "argv0=$0 login_shell=$(shopt -q login_shell && echo on || echo off)"
+ps -o pid,args -p $$ --no-headers
+```
+
+Straight off an SSH login, then after `su gilbert`, then after `su - gilbert`:
+
+```text
+SSH   argv0=-bash  login_shell=on     4530 -bash
+SU    argv0=bash   login_shell=off    4576 bash
+SU-L  argv0=-bash  login_shell=on     4598 -bash
+```
+
+`ps` sees the same thing from outside the process: login shells are listed as `-bash`, the non-login one as plain `bash`. That single character is the entire marker, which is why `su` has to go out of its way to set it.
+
+This is worth separating from `nologin`, which sounds like it belongs on the same axis and does not. `/usr/sbin/nologin` is a program, not an `argv[0]` value, and it lives in the shell field of `/etc/passwd`:
+
+```bash
+grep -E '^(www-data|justin|gilbert):' /etc/passwd
+```
+
+```text
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+justin:x:1000:1000:justin:/home/justin:/bin/bash
+gilbert:x:1001:1001:,,,:/home/gilbert:/bin/bash
+```
+
+Run it and it prints a refusal and exits non-zero, so it never becomes a shell of either kind. That is what would stop `su www-data` from returning a prompt. It also explains a detail of section 6 that is easy to skim past: the injected payload executes `bash -i` by name instead of requesting a login, so nothing ever consults the shell field and `nologin` never gets a vote. A `nologin` shell defends the paths that read `/etc/passwd` to decide what to start, which is `login`, sshd and `su`. It does nothing about code execution that names its own interpreter, which is the only kind this box ever gave up.
+
+Now the test. From the same reverse shell:
+
+```bash
+su - gilbert
+```
+
+```bash
+sudo -l
+```
+
+```text
+sudo: Sorry, user gilbert may not run sudo on lk-linux2.
+```
+
+Identical refusal. The same holds for every nesting order tried: `su justin` then `su gilbert`, `su - justin` then `su - gilbert`, directly from `www-data` or through an intermediate account. **Hypothesis 1 is dead.** A correct login shell changes nothing.
+
+It did, however, print something that got dismissed at the time:
+
+```text
+-bash: /proc/sys/kernel/random/uuid: No such file or directory
+-bash: /proc/sys/kernel/random/boot_id: No such file or directory
+```
+
+Those lines only appear under `su -`, because only a login shell runs the profile scripts that read those files. The natural reading is a broken profile script, and that reading is wrong. Park it; it is the answer, four hypotheses early.
+
+### Hypothesis 2: su does not create a real session
+
+The second candidate has the man page apparently endorsing it, in the same entry:
+
+> Note that on `systemd(1)`-based systems, a new session may be defined as a real entry point to the system. However, `su` does not create a real session (by PAM) from this point of view. You need to use tools like `systemd-run(1)` or `machinectl(1)` to initiate a complete, real session.
+
+If sudo's behaviour depended on a PAM session, this would explain everything. So compare the two PAM stacks. Both `/etc/pam.d/su` and `/etc/pam.d/sshd` pull in `common-session`, and that is where logind registration lives:
+
+```bash
+grep -vE '^\s*#|^$' /etc/pam.d/common-session
+```
+
+```text
+session	[default=1]	pam_permit.so
+session	requisite	pam_deny.so
+session	required	pam_permit.so
+session optional	pam_umask.so
+session	required	pam_unix.so
+session	optional	pam_systemd.so
+```
+
+So `su` does talk to logind. What it does not do is create a *new* session: it inherits the caller's. Opening `su gilbert` inside the SSH session and asking logind who owns it gives sshd's session, with sshd still the leader:
+
+```text
+17 - gilbert (1001)
+  State: active
+ Leader: 4131 (sshd-session)
+```
+
+That inheritance survives a change of uid, which is the part worth internalising. Running `su root` from the SSH session produces a shell that is genuinely root and still sits inside gilbert's login session:
+
+```bash
+id -u; cat /proc/self/cgroup; loginctl session-status | head -3
+```
+
+```text
+0
+0::/user.slice/user-1001.slice/session-22.scope
+22 - gilbert (1001)
+  Since: Wed 2026-09-09 16:30:31 UTC; 10s ago
+  State: active
+```
+
+Session membership, effective uid, and namespace membership are three independent properties of a process, and changing one does not touch the other two. Becoming root does not relocate you into `system.slice` and does not open a new session.
+
+There is one genuine difference between the stacks, and it turns out to be irrelevant to sudo. `/etc/pam.d/sshd` carries `session required pam_loginuid.so` and `/etc/pam.d/su` does not, so an SSH login stamps the kernel's audit login uid while `su` leaves it alone:
+
+```bash
+cat /proc/self/loginuid          # from the SSH session
+cat /proc/$APID/loginuid         # apache
+```
+
+```text
+1001
+4294967295
+```
+
+`4294967295` is `(uid_t)-1`, the unset value, and it is a reliable fingerprint for "this process did not descend from a login". It is readable without any privilege, which makes it a genuinely useful thing to check from a foothold. It also has no bearing on sudoers evaluation whatsoever. **Hypothesis 2 is dead.** The session is not the discriminator.
+
+### Hypothesis 3: the web shell is in a container
+
+Two hypotheses about *identity* have failed, so the next move is to stop asking who the process is and start asking where it is. The blunt version of that question is whether the web shell is containerised:
+
+```bash
+APID=$(systemctl show -p MainPID --value apache2)
+for n in mnt pid net ipc uts user cgroup time; do
+  printf '%-7s host=%-22s apache=%s\n' "$n" "$(readlink /proc/self/ns/$n)" "$(readlink /proc/$APID/ns/$n)"
+done
+```
+
+```text
+mnt     host=mnt:[4026531832]     apache=mnt:[4026532207]
+pid     host=pid:[4026531836]     apache=pid:[4026531836]
+net     host=net:[4026531833]     apache=net:[4026531833]
+ipc     host=ipc:[4026531839]     apache=ipc:[4026531839]
+uts     host=uts:[4026531838]     apache=uts:[4026532262]
+user    host=user:[4026531837]    apache=user:[4026531837]
+cgroup  host=cgroup:[4026531835]  apache=cgroup:[4026531835]
+time    host=time:[4026531834]    apache=time:[4026531834]
+```
+
+Not a container. The PID namespace is shared, which is why the reverse shell reports `echo $$` as `3127` and root on the host sees that same process as `3127`; in a PID namespace it would call itself `1`. The network, the user database and the cgroup tree are all the machine's own, and `systemctl show` confirms there is no root pivot either:
+
+```text
+RootDirectory=
+RootImage=
+```
+
+**Hypothesis 3 is dead as stated**, and it is the productive failure. Two of the eight namespaces are private, and one of them is `mnt`. Nothing was entered. The service was handed a modified view of the filesystem it was already in.
+
+Which is when the parked clue pays. `/proc/sys/kernel/random/uuid` was never missing from the machine. It was missing from *that process tree's filesystem*, and the shell reported it accurately the first time anyone ran `su -`.
+
+### The test that settles it
+
+If the mount namespace is the variable and the shell type is not, then a **non-login** `su gilbert`, the exact command that failed from the reverse shell, should succeed when run inside the host namespace. It does:
+
+```bash
+su gilbert
+```
+
+```bash
+echo "ns=$(readlink /proc/self/ns/mnt) argv0=$0"
+sudo -l
+```
+
+```text
+ns=mnt:[4026531832] argv0=bash
+[sudo: authenticate] Password:
+User gilbert may run the following commands on lk-linux2:
+    (root) /usr/bin/git diff *
+```
+
+`argv0=bash`, so this is not a login shell by the definition established in hypothesis 1, and it lists the rule anyway. Same command, same user, same binary, opposite answers, with the mount namespace as the only difference between the two runs. That is the experiment the first three hypotheses each failed to be.
+
+### Where the private namespace comes from
+
+```bash
+systemctl cat apache2.service
+```
+
+```text
+PrivateTmp=true
+DevicePolicy=closed
+KeyringMode=private
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+PrivateDevices=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=read-only
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectSystem=full
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+ProtectProc=invisible
+ProcSubset=pid
+
+ReadWritePaths=/var/log/apache2
+ReadWritePaths=/var/cache/apache2/mod_cache_disk
+
+InaccessiblePaths=/boot
+InaccessiblePaths=/root
+InaccessiblePaths=-/etc/sudoers
+InaccessiblePaths=-/etc/sudoers.d
+InaccessiblePaths=-/etc/ssh
+InaccessiblePaths=-/etc/apt
+InaccessiblePaths=-/etc/.git
+InaccessiblePaths=-/etc/.svn
+```
+
+Every symptom in this section is on that list. `ProtectHostname=yes` accounts for the private `uts` namespace, and `PrivateTmp=true` alone would have been enough to create the private `mnt` namespace before any of the rest.
+
+The tempting read is that a lab author bolted this on. The packaging system disagrees:
+
+```bash
+md5sum /usr/lib/systemd/system/apache2.service
+grep apache2.service /var/lib/dpkg/info/apache2.md5sums
+dpkg -V apache2
+```
+
+```text
+8e5b76929e1c35cfe706e88af8ecb7e0  /usr/lib/systemd/system/apache2.service
+8e5b76929e1c35cfe706e88af8ecb7e0  usr/lib/systemd/system/apache2.service
+```
+
+The checksums match, `dpkg -V` reports nothing, and `DropInPaths=` is empty, so as far as the system is concerned this is the packaged unit with no local modification. Whatever produced it, the operational conclusion is the uncomfortable one: this is what the service looks like out of the box, so every enumeration result collected through a web shell on a host like this is filtered before you see it, and nothing announces the filter.
+
+### How InaccessiblePaths actually hides a file
+
+`InaccessiblePaths=` is not a permission change, which is why it produces such confusing symptoms. systemd keeps a set of empty, mode `000` nodes of every file type:
+
+```bash
+ls -la /run/systemd/inaccessible/
+```
+
+```text
+b---------  1 root root 0, 0 blk
+c---------  1 root root 0, 0 chr
+d---------  2 root root   40 dir
+p---------  1 root root    0 fifo
+----------  1 root root    0 reg
+s---------  1 root root    0 sock
+```
+
+and bind-mounts the type-appropriate one over each listed path inside the service's namespace. Apache's mount table shows the substitution directly, along with the read-only binds that `ProtectSystem=full` and `ProtectHome=read-only` produce:
+
+```bash
+grep -E ' /etc| /home| /tmp| /proc| /root| /boot' /proc/$APID/mountinfo
+```
+
+```text
+179 178 252:0 /etc  /etc  ro,relatime - ext4 /dev/mapper/ubuntu--vg-ubuntu--lv rw
+182 179 0:28 /systemd/inaccessible/reg /etc/sudoers   ro,nosuid,nodev,noexec - tmpfs tmpfs
+183 179 0:28 /systemd/inaccessible/dir /etc/sudoers.d ro,nosuid,nodev,noexec - tmpfs tmpfs
+181 179 0:28 /systemd/inaccessible/dir /etc/ssh       ro,nosuid,nodev,noexec - tmpfs tmpfs
+180 179 0:28 /systemd/inaccessible/dir /etc/apt       ro,nosuid,nodev,noexec - tmpfs tmpfs
+193 178 0:28 /systemd/inaccessible/dir /root          ro,nosuid,nodev,noexec - tmpfs tmpfs
+201 178 0:28 /systemd/inaccessible/dir /boot          ro,nosuid,nodev,noexec - tmpfs tmpfs
+207 178 252:0 /home /home ro,relatime - ext4 /dev/mapper/ubuntu--vg-ubuntu--lv rw
+208 178 0:47 /     /proc  rw,nosuid,nodev,noexec,relatime - proc proc rw,hidepid=invisible,subset=pid
+198 200 0:36 /systemd-private-9d1350708dd948d096dc7fe80a7384b5-apache2.service-SIYgku/tmp /tmp rw,nosuid,nodev - tmpfs tmpfs
+```
+
+Stat the same two paths from each side and the substitution is unmistakable:
+
+```bash
+stat -c '%n | %s bytes | mode %a | %F' /etc/sudoers /etc/sudoers.d
+nsenter -t $APID -m -- stat -c '%n | %s bytes | mode %a | %F' /etc/sudoers /etc/sudoers.d
+```
+
+```text
+/etc/sudoers   | 1835 bytes | mode 440 | regular file
+/etc/sudoers.d | 4096 bytes | mode 755 | directory
+
+/etc/sudoers   | 0 bytes | mode 0 | regular empty file
+/etc/sudoers.d | 40 bytes | mode 0 | directory
+```
+
+This explains the exact wording of sudo's refusal. sudo is setuid root, so it opens `/etc/sudoers` successfully in both views. Inside the namespace it gets a zero-byte file, parses a policy containing no rules, and reports the truth about that policy:
+
+```bash
+sudo -l -U gilbert                      # from the host
+nsenter -t $APID -m -- sudo -l -U gilbert
+```
+
+```text
+User gilbert may run the following commands on lk-linux2:
+    (root) /usr/bin/git diff *
+
+User gilbert is not allowed to run sudo on lk-linux2.
+```
+
+Which reframes the message that started this whole detour. It was never about `gilbert`. Inside that namespace the policy is empty for **every** account on the box, which is exactly what `su justin` followed by `sudo -l` had already shown in section 7 without anyone noticing. A refusal that applies universally is a statement about the file, not about the user, and that is a cheap tell to check for: if nobody can sudo, ask whether sudo can read anything.
+
+The real policy, incidentally, is not quite what `sudo -l` prints:
+
+```text
+gilbert ALL=(root) /bin/git diff *
+```
+
+sudoers says `/bin/git` and sudo displays `/usr/bin/git`, because it resolves the path through the merged-`usr` symlink before printing. Worth knowing when a rule you are attacking does not match the binary you were told about.
+
+### Three more things that look like the answer
+
+The mechanism is settled, but three details in the evidence above will send a reader down the wrong path if taken at face value.
+
+**`PrivateMounts=no` does not mean there is no private mount namespace.** `systemctl show` says exactly that:
+
+```text
+PrivateMounts=no
+```
+
+while `/proc/1165/ns/mnt` reads `mnt:[4026532207]`. Both are correct, because `PrivateMounts=` is not the only directive that creates one. `systemd.exec(5)` opens its description of the path options with the answer:
+
+> `ReadWritePaths=`, `ReadOnlyPaths=`, `InaccessiblePaths=`, `ExecPaths=`, `NoExecPaths=`
+>
+> Sets up a new file system namespace for executed processes.
+
+`ProtectSystem=`, `ProtectHome=`, `ProtectProc=` and `PrivateTmp=` imply one as well. Reading a single directive to decide whether a service is namespaced gives the wrong answer; `readlink /proc/PID/ns/mnt` is the only check that cannot be misread.
+
+**The `-` in `-/etc/sudoers` is not a negation.** It reads like one and it is not. From the same man page:
+
+> Paths in `ReadWritePaths=`, `ReadOnlyPaths=`, `InaccessiblePaths=`, `ExecPaths=` and `NoExecPaths=` may be prefixed with "-", in which case they will be ignored when they do not exist.
+
+It is a tolerance marker for a path that may be absent. `-/etc/sudoers` is masked exactly as hard as the undashed `/root`; the dash only means the unit still starts on a host where that file does not exist.
+
+**`ProtectKernelTunables=yes` is not what hid `/proc/sys`.** It is on the unit, and it mounts `/proc/sys` **read-only** rather than removing it. The removal comes from `ProcSubset=pid`:
+
+```bash
+nsenter -t $APID -m -- findmnt -T /proc -o TARGET,FSTYPE,OPTIONS
+nsenter -t $APID -m -- ls -ld /proc/sys
+```
+
+```text
+/proc  proc   rw,nosuid,nodev,noexec,relatime,hidepid=invisible,subset=pid
+ls: cannot access '/proc/sys': No such file or directory
+```
+
+Read-only and absent are different states producing different errors, and the error bash printed back in hypothesis 1 was `No such file or directory`. Matching the error text to the directive that produces it is the difference between the right answer and a plausible one.
+
+### Why su cannot escape it
+
+A mount namespace is process state, not user state. Changing uid does not touch it, and joining another one means calling `setns(2)` on a namespace file descriptor, which requires `CAP_SYS_ADMIN` in the target user namespace. `su`, `su -`, `sudo`, `script`, a pty upgrade: none of them attempt it, because none of them are namespace tools. The unit closes the other direction too, with `RestrictNamespaces=yes`, so the service cannot create new namespaces either.
+
+That leaves exactly one move, and it is not a better shell, it is a different origin. Any process created outside the service starts in the machine's own mount table. sshd was the available one here, but cron, a console login, a systemd timer, or a foothold in any service that is not sandboxed this way would all have worked identically. vsftpd, for instance, is completely unsandboxed on this host:
+
+```bash
+systemctl show vsftpd -p ProtectHome -p ProtectSystem -p InaccessiblePaths -p PrivateTmp -p ProcSubset
+```
+
+```text
+ProtectHome=no
+ProtectSystem=no
+InaccessiblePaths=
+PrivateTmp=no
+ProcSubset=all
+```
+
+Code execution through the FTP daemon would have landed in `mnt:[4026531832]` and seen the sudo rule immediately.
+
+### The other two costumes
+
+With the mechanism established, the two symptoms from sections 4 and 10 resolve in a line each.
+
+**The read-only home.** `ProtectHome=read-only` bind-mounts `/home` read-only inside the service namespace only. On the host, `/home` is not even a separate mount:
+
+```bash
+findmnt /home                                  # host: no output, not a mount point
+nsenter -t $APID -m -- findmnt -no SOURCE,TARGET,FSTYPE,OPTIONS /home
+runuser -u justin -- touch /home/justin/.ssh/probe && echo WRITABLE
+```
+
+```text
+/dev/mapper/ubuntu--vg-ubuntu--lv[/home] /home ext4 ro,relatime
+WRITABLE
+```
+
+Justin's home is writable on this machine, and the `authorized_keys` append would have succeeded from anywhere outside Apache's sandbox. What protects that file is not a mount option, it is that the only code execution available at that point in the chain was inside the one process tree where `/home` is read-only.
+
+**The private `/tmp`.** `PrivateTmp=true` gives the service its own tmpfs, mounted from `/tmp/systemd-private-<boot-id>-apache2.service-<random>/tmp`. Files staged in `/tmp` from the web shell are real and writable, and also invisible to every process outside that namespace. Drop a binary there, fail to find it from a second session, and nothing is broken: those are two different directories that share a path.
+
+### Login shell, login session, namespace: three different things
+
+The three hypotheses failed because they were all asking about the first two rows of this table when the answer was in the fourth.
+
+| Concept | Created by | Observed with | Differed here? |
+|---|---|---|---|
+| Login shell | `argv[0]` starting with `-` | `echo $0` | No |
+| PAM session | `pam_unix`, `pam_systemd` | `loginctl session-status` | No |
+| Audit login uid | `pam_loginuid.so` | `cat /proc/self/loginuid` | Yes, irrelevant |
+| Mount namespace | systemd sandbox directives | `readlink /proc/self/ns/mnt` | Yes, decisive |
+
+> Every wrong answer in this section was a property of the *session*, meaning something authentication creates, or a single configuration line read in isolation. The right answer was a property of the *process*, which no amount of authentication changes. When two shells on one host disagree about a fact, compare what the kernel says about each process, `readlink /proc/self/ns/*`, `/proc/self/mountinfo`, `/proc/self/cgroup`, before comparing anything about the users holding them.
+{: .prompt-tip }
 
 ---
 
@@ -726,9 +1192,12 @@ Every step in the intended path is either a service doing exactly what it was co
 | `.git` inside the archive | Packaging mistake | Low: source disclosure | Carries the deleted blob |
 | Secret removed by commit | `.env.local` history | Critical if reachable | `justin` password, still in `git show` |
 | Password reuse | App config equals Linux account | High | Turns a config value into a login |
-| SSH publickey only for justin | `sshd_config` `Match` | Hardening | Forces the chain through the web app |
+| SSH publickey only for justin | `Match Group justin` | Hardening | Forces the chain through the web app |
 | SSH password auth for gilbert | Same config, other scope | Low on its own | Login session that reveals the sudo rule |
-| Read-only home mount | Mount options | Hardening | Kills the `authorized_keys` shortcut |
+| `InaccessiblePaths` on sudoers | `apache2.service` | Hardening | Empty sudo policy in the web shell |
+| `PrivateTmp` on the web shell | `apache2.service` | Hardening | Staged files invisible outside it |
+| `write_enable` unset in vsftpd | `/etc/vsftpd.conf` | Hardening | Refuses the `authorized_keys` upload |
+| `ProtectHome=read-only` | `apache2.service` | Hardening | Blocks that write from the web shell |
 | Unlinked Roundcube 1.6.10 | `/roundcube` | Medium: login page | The one authenticated attack surface |
 | CVE-2025-49113 | Session serializer plus PEAR gadget | Critical post-auth | Credentials become RCE as `www-data` |
 | `su` accepts the password | PAM, no policy switch | By design | `www-data` becomes `justin` |
