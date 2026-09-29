@@ -41,5 +41,6 @@ permalink: /theory/
 - [Delegation](/theory/windows/delegation)
 - [gMSA - Group Managed Service Accounts](/theory/windows/AD/gmsa)
 - [Group Policy Object (GPO) Abuse](/theory/windows/AD/gpo)
+- [LAPS - Local Administrator Password Solution](/theory/windows/AD/laps)
 - [NTLM & Kerberos Relay](/theory/windows/AD/relay)
 - [Shadow Credentials](/theory/windows/AD/shadow-credentials)
