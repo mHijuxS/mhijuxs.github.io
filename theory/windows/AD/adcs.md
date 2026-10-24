@@ -264,6 +264,44 @@ Neither right, on its own, is "issue me a domain admin certificate". The attack 
 > If the CA's RPC and web-enrollment endpoints are filtered, certipy's `ca` and `req` management calls will time out. Add `-ldap-scheme ldap` to drive the CA operations over LDAP instead of the default DCOM/RPC transport.
 {: .prompt-tip}
 
+### ESC13 (Issuance Policy Linked to a Group)
+
+ESC13 abuses a template whose **issuance policy** is tied to an Active Directory group, so that merely enrolling makes the KDC treat the requester as a member of that group, without the account ever being added to it in the directory.
+
+The plumbing is three objects. A certificate template carries an issuance policy OID in `msPKI-Certificate-Policy`. That OID exists as its own object under `CN=OID,CN=Public Key Services,CN=Services,CN=Configuration,...`, and an OID object may carry an `msDS-OIDToGroupLink` attribute pointing at a universal group. When a certificate issued from the template is used for PKINIT, the DC reads the policy OID, follows the group link, and injects that group's SID into the PAC of the resulting TGT. The membership is synthetic: it lives only in the ticket, not in the user's `memberOf`.
+
+So if a low-privileged principal can enroll in a client-authentication template whose issuance policy is linked to a privileged (or dangerously ACL'd) group, enrolling is equivalent to joining that group.
+
+#### ESC13 Requirements
+
+- A template that **allows client authentication** and that the attacker **can enroll in** (enrollment rights for a group we belong to, e.g. `Domain Users`).
+- The template's issuance policy OID has a populated `msDS-OIDToGroupLink` pointing at a group worth having.
+- No manager approval / no authorized signatures on the template.
+
+certipy flags it directly: `ESC13 : Template allows client authentication and issuance policy is linked to group '<DN>'`.
+
+#### ESC13 Exploitation
+
+1. **Request a certificate from the linked template.** Nothing special in the request itself; the group link is server-side.
+
+    ```bash
+    certipy req \
+        -u 'user@domain' -p 'password' \
+        -dc-ip <DC-IP> -target 'CA.domain' \
+        -ca 'Domain-CA' -template '<LinkedTemplate>'
+    ```
+
+2. **Authenticate with it.** The TGT certipy obtains already carries the linked group's SID in its PAC.
+
+    ```bash
+    certipy auth -pfx 'user.pfx' -dc-ip <DC-IP>
+    ```
+
+3. **Use the ticket (or the recovered NT hash) for whatever the linked group can do** - an ACL over another principal, a share, a right the group holds. The enrolment did not change the directory, so this is quiet: no group-membership-change event is logged.
+
+> If the template enforces a minimum RSA key length larger than certipy's default 2048 (a 4096-bit minimum is common), the first request fails with `CERTSRV_E_KEY_LENGTH (0x80094811)`. Re-issue with `-key-size 4096` to match the template.
+{: .prompt-tip}
+
 ### ESC16 (Security Extension Disabled on CA)
 
 Is identical to the mechanism used in `ESC9` attacks, where the end result is a certificate lacking the `SID` security extension, the difference is that in this case, any certificate template enabling client authentication can be used in the `UPN` manipulation attack.
